@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 umask 027
 
-APP_VERSION="1.0.0"
+APP_VERSION="1.0.1"
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${CC_TARGET_DIR:-/var/www/html/callcenter-panel}"
 DB_HOST="${CC_DB_HOST:-localhost}"
@@ -193,18 +193,30 @@ if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" != "D
   if command -v setsebool >/dev/null 2>&1; then
     setsebool -P httpd_can_network_connect 1 >/dev/null 2>&1 || warn "No se pudo activar httpd_can_network_connect."
   fi
+
   if command -v semanage >/dev/null 2>&1; then
-    semanage fcontext -a -t httpd_sys_rw_content_t "${TARGET_DIR}/cache(/.*)?" 2>/dev/null || semanage fcontext -m -t httpd_sys_rw_content_t "${TARGET_DIR}/cache(/.*)?" 2>/dev/null || true
-    restorecon -Rv "$TARGET_DIR/cache" >/dev/null 2>&1 || true
+    semanage fcontext -a -t httpd_sys_content_t "${TARGET_DIR}(/.*)?" 2>/dev/null \
+      || semanage fcontext -m -t httpd_sys_content_t "${TARGET_DIR}(/.*)?" 2>/dev/null \
+      || true
+    semanage fcontext -a -t httpd_sys_rw_content_t "${TARGET_DIR}/cache(/.*)?" 2>/dev/null \
+      || semanage fcontext -m -t httpd_sys_rw_content_t "${TARGET_DIR}/cache(/.*)?" 2>/dev/null \
+      || true
+    restorecon -Rv "$TARGET_DIR" >/dev/null 2>&1 || true
   elif command -v chcon >/dev/null 2>&1; then
+    chcon -R -t httpd_sys_content_t "$TARGET_DIR" 2>/dev/null || true
     chcon -R -t httpd_sys_rw_content_t "$TARGET_DIR/cache" 2>/dev/null || true
   fi
 fi
 
-say "Validando PHP y reiniciando servicios web"
+say "Validando PHP y configuración web"
 PHP_ERRORS=0
 while IFS= read -r -d '' f; do php -l "$f" >/dev/null || PHP_ERRORS=$((PHP_ERRORS+1)); done < <(find "$TARGET_DIR" -name '*.php' -print0)
 [[ "$PHP_ERRORS" == "0" ]] || die "Se detectaron $PHP_ERRORS archivos PHP con error de sintaxis."
+if command -v apachectl >/dev/null 2>&1; then
+  apachectl -t >/dev/null 2>&1 || die "La configuración de Apache tiene errores. Ejecute: apachectl -t"
+elif command -v httpd >/dev/null 2>&1; then
+  httpd -t >/dev/null 2>&1 || die "La configuración de Apache tiene errores. Ejecute: httpd -t"
+fi
 systemctl restart httpd 2>/dev/null || warn "No se pudo reiniciar httpd automáticamente."
 systemctl restart php-fpm 2>/dev/null || true
 ok "Sintaxis PHP validada."
