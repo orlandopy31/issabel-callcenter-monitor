@@ -2,9 +2,21 @@
 
 Panel web para **Issabel Call Center / Asterisk** orientado a monitoreo, supervisión, SLA y reportería operativa.
 
-**Código actual en `main`: v1.0.1**
+**Versión estable actual: v1.0.1**
 
-> **Corrección v1.0.1:** se corrigió el posible error **403 Forbidden** después de instalar en Issabel, relacionado con permisos Unix, contexto SELinux y `DirectoryIndex` de Apache.
+> **Corrección v1.0.1:** soluciona el posible error **403 Forbidden** después de instalar en Issabel, relacionado con permisos Unix, contexto SELinux y `DirectoryIndex` de Apache.
+
+## Descargar última versión
+
+**[Descargar Issabel Call Center Monitor v1.0.1](https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.1/issabel-callcenter-monitor-v1.0.1-fixed.zip)**
+
+**[Ver Release v1.0.1](https://github.com/orlandopy31/issabel-callcenter-monitor/releases/tag/v1.0.1)**
+
+SHA-256 del paquete oficial:
+
+```text
+af53a7153faa4f0502307638651ec3f07d522cc43446da937cc7e594a58ea802
+```
 
 ## Funciones principales
 
@@ -25,39 +37,6 @@ Panel web para **Issabel Call Center / Asterisk** orientado a monitoreo, supervi
 - Exportaciones CSV y PDF.
 - Usuarios, permisos granulares y auditoría.
 
-## Corrección 403 Forbidden
-
-Si ya instaló la versión 1.0.0 y Apache responde:
-
-```text
-Forbidden
-You don't have permission to access this resource.
-```
-
-no es necesario reinstalar. Ejecute en el servidor Issabel:
-
-```bash
-cd /root
-curl -fsSL https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh -o REPARAR_403.sh
-chmod +x REPARAR_403.sh
-sudo ./REPARAR_403.sh /var/www/html/callcenter-panel
-```
-
-El reparador:
-
-1. corrige propietario y permisos de archivos/directorios;
-2. garantiza `DirectoryIndex index.php`;
-3. aplica `httpd_sys_content_t` al panel cuando SELinux está activo;
-4. aplica `httpd_sys_rw_content_t` a `cache/`;
-5. crea una regla explícita de Apache para permitir el acceso al panel en Issabel;
-6. valida la configuración de Apache antes de reiniciar.
-
-Después pruebe:
-
-```text
-http://IP_DEL_ISSABEL/callcenter-panel/
-```
-
 ## Requisitos
 
 El servidor debe contar con Issabel, Asterisk e Issabel Call Center. Como mínimo deben existir:
@@ -69,21 +48,21 @@ El servidor debe contar con Issabel, Asterisk e Issabel Call Center. Como mínim
 
 Además se requiere PHP 7.2 o superior y PDO MySQL.
 
-## Instalación nueva
+## Instalación rápida v1.0.1
 
-Para instalaciones nuevas se recomienda utilizar **v1.0.1 o superior** desde la sección **Releases**.
-
-El instalador v1.0.1 ya incorpora la corrección de permisos y SELinux automáticamente.
-
-La instalación habitual es:
+En el servidor Issabel:
 
 ```bash
-unzip issabel-callcenter-monitor-v1.0.1.zip
+cd /root
+wget -O issabel-callcenter-monitor-v1.0.1-fixed.zip \
+  https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.1/issabel-callcenter-monitor-v1.0.1-fixed.zip
+
+unzip issabel-callcenter-monitor-v1.0.1-fixed.zip
 cd cybermatica_issabel_callcenter_monitor_v1.0
 sudo bash install.sh
 ```
 
-El instalador:
+El instalador v1.0.1:
 
 1. verifica PHP, PDO MySQL y las bases de Issabel;
 2. crea `callcenter_panel`;
@@ -92,10 +71,35 @@ El instalador:
 5. instala el panel en `/var/www/html/callcenter-panel`;
 6. genera `config.php` con las credenciales técnicas creadas durante la instalación;
 7. configura un usuario AMI local para monitoreo/supervisión;
-8. ajusta permisos, cache y SELinux;
-9. valida PHP y Apache antes del reinicio.
+8. corrige permisos Unix y acceso de Apache;
+9. aplica `httpd_sys_content_t` al panel cuando SELinux está activo;
+10. aplica `httpd_sys_rw_content_t` a `cache/`;
+11. garantiza `DirectoryIndex index.php`;
+12. valida PHP y Apache antes de reiniciar servicios.
 
 Consulte **[GUIA_INSTALACION_DESDE_CERO.md](GUIA_INSTALACION_DESDE_CERO.md)** antes de instalar en producción.
+
+## Reparar 403 Forbidden en una instalación existente
+
+Si instaló una versión anterior y Apache responde:
+
+```text
+Forbidden
+You don't have permission to access this resource.
+```
+
+no necesita reinstalar. Ejecute:
+
+```bash
+cd /root
+curl -fsSL \
+  https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
+  -o REPARAR_403.sh
+chmod +x REPARAR_403.sh
+sudo ./REPARAR_403.sh /var/www/html/callcenter-panel
+```
+
+El reparador corrige permisos, contexto SELinux, acceso de Apache y `DirectoryIndex`, valida Apache y reinicia los servicios web necesarios.
 
 ## Wallboard para TV
 
@@ -128,6 +132,18 @@ El sistema diferencia entre:
 - Las contraseñas de usuarios se guardan con `password_hash()`.
 - No publique el `config.php` generado en un servidor real.
 - Revise **[SECURITY.md](SECURITY.md)** antes de exponer el panel a Internet.
+
+## Verificar la descarga
+
+```bash
+sha256sum issabel-callcenter-monitor-v1.0.1-fixed.zip
+```
+
+Resultado esperado:
+
+```text
+af53a7153faa4f0502307638651ec3f07d522cc43446da937cc7e594a58ea802
+```
 
 ## Versión
 
