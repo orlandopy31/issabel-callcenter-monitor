@@ -1,11 +1,5 @@
 # Seguridad
 
-## Credenciales
-
-No publique credenciales reales de MySQL, AMI, administradores ni datos de producción.
-El instalador genera credenciales técnicas durante la instalación. Revise el archivo `config.php`
-del servidor antes de compartir copias del sistema.
-
 ## Recomendaciones
 
 - Mantenga AMI limitado a `127.0.0.1` cuando el panel y Asterisk estén en el mismo servidor.
