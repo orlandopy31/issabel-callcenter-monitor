@@ -19,16 +19,21 @@ if [[ -d "$TARGET_DIR/cache" ]]; then
   find "$TARGET_DIR/cache" -type f -exec chmod 0660 {} \;
 fi
 
-echo "[2/5] Asegurando DirectoryIndex index.php..."
+echo "[2/5] Asegurando DirectoryIndex..."
 HT="$TARGET_DIR/.htaccess"
-if [[ -f "$HT" ]] && ! grep -Eq '^[[:space:]]*DirectoryIndex[[:space:]]+.*index\.php' "$HT"; then
+if [[ ! -f "$HT" ]]; then
+  cat > "$HT" <<'EOF'
+DirectoryIndex index.php
+Options -Indexes
+EOF
+elif ! grep -Eq '^[[:space:]]*DirectoryIndex[[:space:]]+.*index\.php' "$HT"; then
   { echo 'DirectoryIndex index.php'; echo; cat "$HT"; } > "$HT.tmp"
   mv "$HT.tmp" "$HT"
-  chown root:"$WEB_GROUP" "$HT"
-  chmod 0640 "$HT"
 fi
+chown root:"$WEB_GROUP" "$HT"
+chmod 0640 "$HT"
 
-echo "[3/5] Corrigiendo contexto SELinux..."
+echo "[3/5] Corrigiendo SELinux..."
 if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" != "Disabled" ]]; then
   if command -v semanage >/dev/null 2>&1; then
     semanage fcontext -a -t httpd_sys_content_t "${TARGET_DIR}(/.*)?" 2>/dev/null \
@@ -44,7 +49,22 @@ if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" != "D
   fi
 fi
 
-echo "[4/5] Validando Apache..."
+echo "[4/5] Asegurando acceso de Apache..."
+if [[ -d /etc/httpd/conf.d ]]; then
+  APACHE_PANEL_CONF="/etc/httpd/conf.d/callcenter-panel.conf"
+  cat > "$APACHE_PANEL_CONF" <<EOF
+<Directory "${TARGET_DIR}">
+    Options -Indexes
+    AllowOverride All
+    Require all granted
+    DirectoryIndex index.php
+</Directory>
+EOF
+  chown root:root "$APACHE_PANEL_CONF"
+  chmod 0644 "$APACHE_PANEL_CONF"
+  restorecon "$APACHE_PANEL_CONF" 2>/dev/null || true
+fi
+
 if command -v apachectl >/dev/null 2>&1; then apachectl -t
 elif command -v httpd >/dev/null 2>&1; then httpd -t
 fi
@@ -54,7 +74,10 @@ systemctl restart httpd
 systemctl restart php-fpm 2>/dev/null || true
 
 echo
-echo "Reparación terminada. Pruebe: http://IP_DEL_SERVIDOR/$(basename "$TARGET_DIR")/"
-echo "Si persiste el 403:"
+echo "Permisos reparados. Pruebe:"
+echo "  http://IP_DEL_SERVIDOR/$(basename "$TARGET_DIR")/"
+echo
+echo "Si persiste el 403, ejecute:"
+echo "  getenforce"
 echo "  ls -ldZ /var/www /var/www/html '$TARGET_DIR' '$TARGET_DIR/index.php'"
 echo "  tail -n 80 /var/log/httpd/error_log"
