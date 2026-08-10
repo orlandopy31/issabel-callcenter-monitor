@@ -1,0 +1,21 @@
+# Runtime
+cache/*
+!cache/.gitkeep
+
+# Local/generated configuration
+.env
+.env.*
+config.local.php
+*.local.php
+
+# Logs / backups
+*.log
+*.bak
+*.sql.gz
+*.tar.gz
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
