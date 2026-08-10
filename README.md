@@ -79,27 +79,6 @@ El instalador v1.0.1:
 
 Consulte **[GUIA_INSTALACION_DESDE_CERO.md](GUIA_INSTALACION_DESDE_CERO.md)** antes de instalar en producción.
 
-## Reparar 403 Forbidden en una instalación existente
-
-Si instaló una versión anterior y Apache responde:
-
-```text
-Forbidden
-You don't have permission to access this resource.
-```
-
-no necesita reinstalar. Ejecute:
-
-```bash
-cd /root
-curl -fsSL \
-  https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
-  -o REPARAR_403.sh
-chmod +x REPARAR_403.sh
-sudo ./REPARAR_403.sh /var/www/html/callcenter-panel
-```
-
-El reparador corrige permisos, contexto SELinux, acceso de Apache y `DirectoryIndex`, valida Apache y reinicia los servicios web necesarios.
 
 ## Wallboard para TV
 
