@@ -1,8 +1,8 @@
 # Cybermatica Call Center Monitor v1.0
 
-Panel web para Issabel Call Center / Asterisk orientado a monitoreo, supervisión y reportería.
+Panel web para **Issabel Call Center / Asterisk** orientado a monitoreo, supervisión y reportería.
 
-## Incluye
+## Funciones principales
 
 - Dashboard ejecutivo.
 - Monitoreo en tiempo real de agentes.
@@ -21,47 +21,72 @@ Panel web para Issabel Call Center / Asterisk orientado a monitoreo, supervisió
 - Exportaciones CSV y PDF.
 - Usuarios, permisos granulares y auditoría.
 
-## Instalación recomendada desde GitHub
+## Requisitos
 
-```bash
-cd /root
-git clone https://github.com/orlandopy31/issabel-callcenter-monitor.git
-cd issabel-callcenter-monitor
-sudo bash install.sh
-```
-
-También puede usar **Code → Download ZIP** en GitHub, descomprimir el proyecto y ejecutar `sudo bash install.sh`.
-
-El instalador:
-
-1. verifica PHP, PDO MySQL y bases de Issabel;
-2. crea `callcenter_panel`;
-3. crea un usuario MySQL exclusivo con lectura sobre las bases de Issabel;
-4. crea el superadministrador inicial;
-5. instala el panel en `/var/www/html/callcenter-panel`;
-6. genera un `config.php` sin usar root como usuario de la aplicación;
-7. configura un usuario AMI local para monitoreo/supervisión;
-8. ajusta cache, SELinux y permisos;
-9. valida todos los PHP y reinicia Apache/PHP-FPM.
-
-Consulte `GUIA_INSTALACION_DESDE_CERO.md` antes de instalar en producción.
-
-## Requisito importante
-
-Issabel Call Center debe estar instalado y debe existir al menos:
+El servidor debe contar con Issabel, Asterisk e Issabel Call Center. Como mínimo deben existir:
 
 - `call_center.agent`
 - `call_center.audit`
 - `call_center.call_entry`
 - `asteriskcdrdb.cdr`
 
-Los módulos opcionales dependen de tablas adicionales creadas por Issabel Call Center.
+Además se requiere PHP 7.2 o superior y PDO MySQL.
+
+## Instalación
+
+La distribución completa se entrega como `issabel-callcenter-monitor-v1.0.zip`.
+
+> **Importante:** no ejecute `install.sh` desde un clon que no contenga todos los archivos PHP de la aplicación. La versión completa debe incluir las carpetas `api/`, `assets/`, `bin/`, `includes/`, `sql/` y los módulos PHP del panel.
+
+Una vez descargado el paquete completo:
+
+```bash
+cd /root
+unzip issabel-callcenter-monitor-v1.0.zip
+cd issabel-callcenter-monitor-v1.0
+sudo bash install.sh
+```
+
+El instalador:
+
+1. verifica PHP, PDO MySQL y las bases de Issabel;
+2. crea `callcenter_panel`;
+3. crea un usuario MySQL exclusivo con lectura sobre las bases de Issabel;
+4. crea el superadministrador inicial;
+5. instala el panel en `/var/www/html/callcenter-panel`;
+6. genera un `config.php` con las credenciales técnicas creadas durante la instalación;
+7. configura un usuario AMI local para monitoreo/supervisión;
+8. ajusta cache, SELinux y permisos;
+9. valida la sintaxis PHP y reinicia los servicios web necesarios.
+
+Consulte `GUIA_INSTALACION_DESDE_CERO.md` antes de instalar en producción.
+
+## Wallboard para TV
+
+Para una pantalla pública de operación, cree un usuario con únicamente el permiso:
+
+```text
+live.view
+```
+
+Luego utilice:
+
+```text
+http://IP_DEL_ISSABEL/callcenter-panel/live.php?tv=1
+```
+
+## SLA
+
+La política inicial es **80 % dentro de 20 segundos (80/20)** y puede modificarse desde **Administración → Configuración SLA**. Los reportes utilizan el valor configurado para calcular cumplimiento.
 
 ## Seguridad
 
-- El panel usa un usuario MySQL dedicado; PHP no necesita conectarse como `root`.
-- AMI se configura con un usuario exclusivo restringido a `127.0.0.1`.
-- Las contraseñas de usuarios del panel se almacenan mediante `password_hash()`.
+- La aplicación no necesita conectarse a MySQL como `root` durante su operación normal.
+- El usuario AMI se restringe a `127.0.0.1` cuando panel y Asterisk están en el mismo servidor.
+- Las contraseñas de usuarios se guardan con `password_hash()`.
 - No publique el `config.php` generado en un servidor real si contiene credenciales.
+- Revise `SECURITY.md` antes de exponer el panel a Internet.
 
-Consulte `SECURITY.md` para recomendaciones adicionales.
+## Versión
+
+`1.0.0`
