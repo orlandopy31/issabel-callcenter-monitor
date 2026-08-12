@@ -117,6 +117,8 @@ config.php         root:apache     -rw-r-----   (640)
 cache/             apache:apache   drwxrwx---   (770)
 ```
 
+> **Importante:** ver `root` como propietario de `index.php`, `.htaccess` y los demás archivos PHP es correcto. El grupo debe ser `apache`. Solo `cache/` debe quedar como `apache:apache`, porque es la zona que la aplicación necesita escribir.
+
 ### Paso 9 — Acceder al panel
 
 ```text
