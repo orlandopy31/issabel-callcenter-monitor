@@ -37,24 +37,27 @@ if [[ ! -f "$STATE_FILE" ]]; then
   fi
 fi
 
-chown root:"$WEB_GROUP" "$STATE_FILE"
-chmod 0640 "$STATE_FILE"
+fix_state_permissions(){
+  chown root:"$WEB_GROUP" "$STATE_FILE"
+  chmod 0640 "$STATE_FILE"
 
-if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" != "Disabled" ]]; then
-  if ! command -v semanage >/dev/null 2>&1 && command -v dnf >/dev/null 2>&1; then
-    dnf -y install policycoreutils-python-utils >/dev/null 2>&1 || warn "No se pudo instalar policycoreutils-python-utils."
+  if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" != "Disabled" ]]; then
+    if ! command -v semanage >/dev/null 2>&1 && command -v dnf >/dev/null 2>&1; then
+      dnf -y install policycoreutils-python-utils >/dev/null 2>&1 || warn "No se pudo instalar policycoreutils-python-utils."
+    fi
+    if command -v semanage >/dev/null 2>&1; then
+      semanage fcontext -a -t httpd_sys_content_t "$LICENSE_DIR" 2>/dev/null \
+        || semanage fcontext -m -t httpd_sys_content_t "$LICENSE_DIR" 2>/dev/null || true
+      semanage fcontext -a -t httpd_sys_content_t "$STATE_FILE" 2>/dev/null \
+        || semanage fcontext -m -t httpd_sys_content_t "$STATE_FILE" 2>/dev/null || true
+      restorecon -v "$LICENSE_DIR" "$STATE_FILE" || true
+    elif command -v chcon >/dev/null 2>&1; then
+      chcon -t httpd_sys_content_t "$LICENSE_DIR" "$STATE_FILE" || true
+    fi
   fi
-  if command -v semanage >/dev/null 2>&1; then
-    semanage fcontext -a -t httpd_sys_content_t "$LICENSE_DIR" 2>/dev/null \
-      || semanage fcontext -m -t httpd_sys_content_t "$LICENSE_DIR" 2>/dev/null || true
-    semanage fcontext -a -t httpd_sys_content_t "$STATE_FILE" 2>/dev/null \
-      || semanage fcontext -m -t httpd_sys_content_t "$STATE_FILE" 2>/dev/null || true
-    restorecon -v "$LICENSE_DIR" "$STATE_FILE" || true
-  elif command -v chcon >/dev/null 2>&1; then
-    chcon -t httpd_sys_content_t "$LICENSE_DIR" "$STATE_FILE" || true
-  fi
-fi
+}
 
+fix_state_permissions
 ok "Permisos y contexto SELinux del estado de licencia corregidos."
 
 echo
@@ -65,7 +68,17 @@ ls -lZ "$STATE_FILE" || true
 
 echo
 echo "Verificando licencia contra Cybermatica..."
-php "$TARGET_DIR/bin/license_check.php" || die "La verificación de licencia sigue fallando."
+if ! php "$TARGET_DIR/bin/license_check.php"; then
+  if [[ -f "$CLIENT_FILE" ]]; then
+    warn "La verificación falló. Revalidando la misma Installation ID y Licence Key contra Cybermatica..."
+    cp -a "$STATE_FILE" "${STATE_FILE}.bak.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
+    php "$TARGET_DIR/bin/license_register.php" || die "No se pudo revalidar la licencia registrada."
+    fix_state_permissions
+    php "$TARGET_DIR/bin/license_check.php" || die "La firma de licencia continúa sin validar después de la revalidación."
+  else
+    die "La verificación de licencia falló y no existe el archivo privado de la instalación."
+  fi
+fi
 
 systemctl restart php-fpm 2>/dev/null || true
 systemctl restart httpd 2>/dev/null || true
