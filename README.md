@@ -1,186 +1,213 @@
-# Cybermatica Call Center Monitor
+# Cybermatica Issabel Call Center Monitor
 
-Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, productividad, SLA y reportería operativa.
+Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, productividad, SLA, grabaciones y reportería operativa.
 
-## Instalación recomendada — siempre la última versión
+## Instalación recomendada: siempre la última versión estable
 
-No es necesario cambiar los comandos de instalación cada vez que se publique una nueva versión.
+No es necesario editar el README cada vez que se publica una nueva versión. El script `install-latest.sh` consulta GitHub, identifica la **última Release estable**, descarga su ZIP, ejecuta `install.sh` y finalmente aplica el reparador de permisos más reciente de `main`.
 
-El repositorio incluye `install-latest.sh`, que consulta automáticamente la **última Release estable publicada en GitHub**, descarga su ZIP y ejecuta el instalador correspondiente.
+### Paso 1 — Ingresar como root
 
-Ejecute como `root` en el servidor Issabel:
+```bash
+sudo -i
+```
+
+### Paso 2 — Instalar herramientas básicas
+
+En Issabel 5 / Rocky Linux 8:
+
+```bash
+dnf -y install curl unzip
+```
+
+### Paso 3 — Descargar el instalador de la última versión
 
 ```bash
 cd /root
-
 curl -fsSL \
   https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/install-latest.sh \
   -o install-latest.sh
-
 chmod +x install-latest.sh
-sudo ./install-latest.sh
 ```
 
-El proceso mostrará qué versión encontró antes de descargarla:
+### Paso 4 — Ejecutar la instalación
 
-```text
-==> Consultando la última versión publicada en GitHub
-Última versión: vX.Y.Z
-Paquete: issabel-callcenter-monitor-vX.Y.Z.zip
-
-==> Descargando vX.Y.Z
-==> Ejecutando instalador de vX.Y.Z
+```bash
+./install-latest.sh
 ```
 
-De esta manera, cuando se publique `v1.0.3`, `v1.0.4` o cualquier versión posterior, **los mismos comandos seguirán instalando la versión más reciente**.
+El instalador solicitará normalmente:
 
-> La fuente utilizada para determinar la versión es la Release marcada por GitHub como `latest`. Una versión `draft` o `prerelease` no se utilizará como instalación estable.
+- directorio del panel (recomendado: `/var/www/html/callcenter-panel`);
+- nombre de empresa/call center;
+- zona horaria;
+- usuario administrador de MariaDB/MySQL;
+- contraseña del administrador de MariaDB/MySQL;
+- usuario administrador del panel;
+- nombre del administrador;
+- contraseña inicial del panel.
 
-## Qué hace el instalador
+### Paso 5 — Issabel Call Center
 
-Antes de instalar el panel, el sistema comprueba:
+Antes de instalar el panel se verifica que Issabel Call Center esté completo. Se comprueban la base `call_center`, sus tablas requeridas, `agent_console` y el servicio `issabeldialer`.
 
-- Issabel y Asterisk;
-- PHP y PDO MySQL;
-- MariaDB/MySQL;
-- las bases `asterisk` y `asteriskcdrdb`;
-- `asteriskcdrdb.cdr`;
-- la instalación de Issabel Call Center;
-- las tablas de `call_center` utilizadas por el panel;
-- el módulo web `agent_console`;
-- el servicio `issabeldialer`.
+Si Call Center está ausente o incompleto en **Issabel 5 sobre Rocky Linux 8**, el instalador puede instalarlo/repararlo automáticamente desde `ISSABELPBX/callcenter-issabel5` y vuelve a validar todos los componentes antes de continuar.
 
-Si Issabel Call Center está ausente o incompleto en **Issabel 5 sobre Rocky Linux 8**, el instalador puede instalarlo/repararlo automáticamente desde `ISSABELPBX/callcenter-issabel5` y vuelve a validar sus componentes antes de continuar.
-
-El flujo es:
-
-```text
-Verificar Issabel / Asterisk / MySQL
-        ↓
-Verificar Issabel Call Center
-        ↓
-¿Está completo?
-   ├── Sí → continuar
-   └── No → instalar/reparar Call Center
-                    ↓
-             validar nuevamente
-                    ↓
-        instalar Call Center Monitor
-```
-
-El log de instalación automática de Call Center queda en:
+El log de esa operación queda en:
 
 ```text
 /var/log/callcenter-panel-callcenter-install.log
 ```
 
-## Desactivar la instalación automática de Issabel Call Center
-
-Si desea que el instalador no modifique el módulo Call Center:
+Para desactivar esa instalación automática:
 
 ```bash
-CC_AUTO_INSTALL_CALLCENTER=0 sudo -E ./install-latest.sh
+CC_AUTO_INSTALL_CALLCENTER=0 ./install-latest.sh
 ```
 
-Si Call Center no está instalado o está incompleto, la instalación se detendrá con un diagnóstico.
+### Paso 6 — Permisos web, Apache y SELinux
 
-## Usar otra revisión del módulo Issabel Call Center
+El sistema configura automáticamente:
 
-El instalador del monitor utiliza por defecto una revisión validada del módulo Call Center para evitar cambios externos inesperados.
+- directorios públicos del panel: `0755`;
+- archivos públicos: `0644`;
+- `.htaccess`: `0644`;
+- `config.php`: `0640`, propietario `root` y grupo web;
+- `cache/`: propietario del servidor web y permisos de escritura;
+- contexto SELinux `httpd_sys_content_t` para el panel;
+- contexto SELinux `httpd_sys_rw_content_t` para `cache/`;
+- `/etc/httpd/conf.d/callcenter-panel.conf` con `Require all granted` y `DirectoryIndex index.php`.
 
-Para utilizar explícitamente la rama `master` del proyecto de Call Center:
-
-```bash
-CC_CALLCENTER_GIT_REF=master sudo -E ./install-latest.sh
-```
-
-En producción se recomienda conservar la revisión fijada por cada versión del monitor hasta validar una revisión nueva.
-
-Más detalles: **[DEPENDENCIA_ISSABEL_CALLCENTER.md](DEPENDENCIA_ISSABEL_CALLCENTER.md)**.
-
-## Funciones principales
-
-- Dashboard ejecutivo.
-- Monitoreo en tiempo real de agentes.
-- Wallboard profesional para TV (`live.php?tv=1`).
-- Escucha, susurro y conferencia mediante AMI + ChanSpy.
-- Productividad por agente.
-- Llamadas entrantes y salientes.
-- Llamadas abandonadas y devoluciones.
-- Campañas salientes.
-- Pausas y sesiones.
-- Nivel de servicio / SLA configurable.
-- Comparativo de llamadas entrantes.
-- Fuera de horario.
-- Formularios de Call Center.
-- Grabaciones.
-- Exportaciones CSV y PDF.
-- Usuarios, permisos granulares y auditoría.
-
-## Wallboard para TV
-
-Para una pantalla pública, cree un usuario con únicamente:
+En Issabel/Rocky la regla propia de Apache usa **`AllowOverride None`**, por lo que Apache no depende de poder procesar `.htaccess` para abrir el panel. Esto evita el error:
 
 ```text
-live.view
+Server unable to read htaccess file, denying access to be safe
 ```
 
-Luego abra:
+Al finalizar, `install-latest.sh` ejecuta además el reparador de permisos más reciente publicado en `main`.
+
+### Paso 7 — Verificar servicios
+
+```bash
+systemctl status httpd --no-pager
+systemctl status php-fpm --no-pager
+systemctl status issabeldialer --no-pager
+asterisk -rx "core show version"
+```
+
+### Paso 8 — Verificar permisos
+
+```bash
+namei -l /var/www/html/callcenter-panel/.htaccess
+ls -ldZ /var /var/www /var/www/html /var/www/html/callcenter-panel
+ls -lZ /var/www/html/callcenter-panel/.htaccess
+ls -lZ /var/www/html/callcenter-panel/index.php
+ls -lZ /var/www/html/callcenter-panel/config.php
+```
+
+Valores esperados de referencia:
+
+```text
+directorios web   drwxr-xr-x   (755)
+.htaccess          -rw-r--r--   (644)
+index.php          -rw-r--r--   (644)
+config.php         -rw-r-----   (640)
+```
+
+### Paso 9 — Acceder al panel
+
+```text
+http://IP_DEL_ISSABEL/callcenter-panel/
+```
+
+Wallboard para TV:
 
 ```text
 http://IP_DEL_ISSABEL/callcenter-panel/live.php?tv=1
 ```
 
-## SLA
+## Reparar un 403 Forbidden existente
 
-La política inicial es **80 % dentro de 20 segundos (80/20)** y puede modificarse desde:
+Si ya instaló el panel y aparece:
 
-**Administración → Configuración SLA**
+```text
+Forbidden
+You don't have permission to access this resource.
+Server unable to read htaccess file, denying access to be safe
+```
 
-## Reparar 403 Forbidden
-
-Las versiones actuales incluyen la corrección de permisos Unix, SELinux y `DirectoryIndex index.php`.
-
-Para reparar una instalación anterior:
+ejecute:
 
 ```bash
+sudo -i
 cd /root
 curl -fsSL \
   https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
   -o REPARAR_403.sh
 chmod +x REPARAR_403.sh
-sudo ./REPARAR_403.sh /var/www/html/callcenter-panel
+./REPARAR_403.sh /var/www/html/callcenter-panel
 ```
+
+El reparador corrige permisos Unix, directorios padre, configuración Apache, SELinux, cache y comprueba que el usuario `apache` pueda leer realmente `index.php`, `.htaccess` y `config.php`.
+
+Si todavía aparece 403, recopile:
+
+```bash
+namei -l /var/www/html/callcenter-panel/.htaccess
+ls -ldZ /var /var/www /var/www/html /var/www/html/callcenter-panel
+ls -lZ /var/www/html/callcenter-panel/.htaccess \
+       /var/www/html/callcenter-panel/index.php \
+       /var/www/html/callcenter-panel/config.php
+apachectl -t -D DUMP_RUN_CFG | head -80
+tail -n 100 /var/log/httpd/error_log
+```
+
+## Funciones principales
+
+- Dashboard ejecutivo.
+- Monitoreo en tiempo real de agentes.
+- Wallboard profesional para TV.
+- Escucha, susurro y conferencia mediante AMI + ChanSpy.
+- Productividad por agente.
+- Llamadas recibidas y realizadas.
+- Llamadas abandonadas y devoluciones.
+- Campañas salientes.
+- Pausas y sesiones.
+- SLA configurable.
+- Comparativos de llamadas.
+- Grabaciones.
+- Exportaciones CSV/PDF.
+- Usuarios, permisos y auditoría.
+
+## SLA
+
+La política inicial es **80 % dentro de 20 segundos (80/20)** y puede modificarse desde **Administración → Configuración SLA**.
 
 ## Seguridad
 
-- PHP no opera con el usuario MySQL `root` durante el funcionamiento normal.
-- El panel crea un usuario MySQL técnico exclusivo.
-- AMI utiliza un usuario separado restringido a `127.0.0.1` cuando Asterisk está en el mismo servidor.
-- Las contraseñas del panel se almacenan mediante `password_hash()`.
-- Después de instalar o reparar Call Center, el panel vuelve a validar los componentes requeridos.
-- Revise **[SECURITY.md](SECURITY.md)** antes de exponer el panel a Internet.
+- La aplicación no usa MySQL `root` durante su funcionamiento normal.
+- Se crea un usuario MySQL técnico exclusivo para el panel.
+- AMI usa un usuario separado restringido a `127.0.0.1` cuando panel y Asterisk están en el mismo servidor.
+- Las contraseñas de usuarios se almacenan mediante `password_hash()`.
+- `config.php` permanece fuera del acceso HTTP directo y con permisos restringidos.
+- No use `chmod 777` sobre el panel.
+- Realice un snapshot/backup antes de actualizar una central en producción.
 
 ## Actualización
 
-Para instalar una versión nueva publicada en GitHub, vuelva a ejecutar exactamente los mismos comandos:
+Para volver a instalar/actualizar usando siempre la última Release estable:
 
 ```bash
+sudo -i
 cd /root
 curl -fsSL \
   https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/install-latest.sh \
   -o install-latest.sh
 chmod +x install-latest.sh
-sudo ./install-latest.sh
+./install-latest.sh
 ```
 
-El instalador principal realiza respaldo de la instalación web existente antes de reemplazarla.
-
-## Documentación
-
-- **[Guía de instalación desde cero](GUIA_INSTALACION_DESDE_CERO.md)**
-- **[Dependencia Issabel Call Center](DEPENDENCIA_ISSABEL_CALLCENTER.md)**
-- **[Seguridad](SECURITY.md)**
+El instalador principal crea un respaldo del directorio web existente antes de reemplazarlo.
 
 ## Proyecto
 
