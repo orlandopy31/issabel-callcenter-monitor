@@ -123,9 +123,9 @@ Para desactivar la instalación automática:
 CC_AUTO_INSTALL_CALLCENTER=0 ./install.sh
 ```
 
-## Permisos correctos después de instalar
+## Permisos obligatorios del panel
 
-v1.0.4 corrige los permisos del panel para evitar errores Apache como:
+Para que Apache pueda abrir el sistema correctamente y evitar errores como:
 
 ```text
 Forbidden
@@ -133,7 +133,7 @@ You don't have permission to access this resource.
 Server unable to read htaccess file, denying access to be safe
 ```
 
-El esquema esperado es:
+la instalación debe terminar con este esquema:
 
 ```text
 /var/www/html/callcenter-panel   root:apache     755
@@ -145,6 +145,80 @@ cache/                            apache:apache   770
 
 > **Importante:** que los archivos PHP tengan propietario `root` es correcto. El grupo debe ser `apache`. Solamente `cache/` necesita quedar escribible por Apache.
 
+### Aplicar los permisos manualmente
+
+Si desea comprobar o normalizar los permisos después de la instalación, ejecute exactamente:
+
+```bash
+sudo -i
+
+TARGET="/var/www/html/callcenter-panel"
+
+# Apache debe poder atravesar los directorios padre
+chown root:root /var/www /var/www/html
+chmod 755 /var/www /var/www/html
+
+# Código de la aplicación: root como propietario y apache como grupo
+chown -R root:apache "$TARGET"
+
+# Directorios públicos
+find "$TARGET" -type d -exec chmod 755 {} \;
+
+# Archivos públicos
+find "$TARGET" -type f -exec chmod 644 {} \;
+
+# Archivos principales
+chown root:apache "$TARGET/index.php" "$TARGET/.htaccess" "$TARGET/config.php"
+chmod 644 "$TARGET/index.php"
+chmod 644 "$TARGET/.htaccess"
+chmod 640 "$TARGET/config.php"
+
+# Directorio escribible de la aplicación
+chown -R apache:apache "$TARGET/cache"
+find "$TARGET/cache" -type d -exec chmod 770 {} \;
+find "$TARGET/cache" -type f -exec chmod 660 {} \;
+```
+
+El resultado esperado es:
+
+```text
+/var/www/html/callcenter-panel   root:apache     drwxr-xr-x   755
+index.php                         root:apache     -rw-r--r--   644
+.htaccess                         root:apache     -rw-r--r--   644
+config.php                        root:apache     -rw-r-----   640
+cache/                            apache:apache   drwxrwx---   770
+```
+
+### Verificar que Apache pueda leer los archivos
+
+Ejecute:
+
+```bash
+runuser -u apache -- test -x /var/www/html/callcenter-panel && echo "OK directorio"
+runuser -u apache -- test -r /var/www/html/callcenter-panel/index.php && echo "OK index.php"
+runuser -u apache -- test -r /var/www/html/callcenter-panel/.htaccess && echo "OK .htaccess"
+runuser -u apache -- test -r /var/www/html/callcenter-panel/config.php && echo "OK config.php"
+```
+
+Deben aparecer los cuatro mensajes `OK`.
+
+### Verificación visual de propietario, grupo y permisos
+
+```bash
+namei -l /var/www/html/callcenter-panel/.htaccess
+
+ls -ld \
+/var/www/html/callcenter-panel \
+/var/www/html/callcenter-panel/cache
+
+ls -l \
+/var/www/html/callcenter-panel/index.php \
+/var/www/html/callcenter-panel/.htaccess \
+/var/www/html/callcenter-panel/config.php
+```
+
+## Apache y SELinux
+
 El instalador también configura:
 
 - contexto SELinux `httpd_sys_content_t` para el panel;
@@ -154,19 +228,12 @@ El instalador también configura:
 - `DirectoryIndex index.php`;
 - `AllowOverride None` para evitar depender de `.htaccess` al autorizar el acceso.
 
-## Verificar permisos
+Para comprobar SELinux:
 
 ```bash
-namei -l /var/www/html/callcenter-panel/.htaccess
-
-ls -ldZ \
-/var/www/html/callcenter-panel \
-/var/www/html/callcenter-panel/cache
-
-ls -lZ \
-/var/www/html/callcenter-panel/index.php \
-/var/www/html/callcenter-panel/.htaccess \
-/var/www/html/callcenter-panel/config.php
+getenforce
+ls -ldZ /var/www/html/callcenter-panel
+ls -ldZ /var/www/html/callcenter-panel/cache
 ```
 
 ## Reparar una instalación existente con 403 Forbidden
