@@ -6,7 +6,7 @@ Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, pro
 
 ## Novedad v1.0.2: instalación automática de Issabel Call Center
 
-El instalador instala el modudo de `call_center` no estén presentes.
+El instalador instala el modudo de `call_center` si no estén presentes.
 
 Antes de instalar el panel, `install.sh` verifica:
 
