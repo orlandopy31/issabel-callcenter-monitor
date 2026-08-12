@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 umask 027
 
-APP_VERSION="1.0.1"
+APP_VERSION="1.0.2"
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${CC_TARGET_DIR:-/var/www/html/callcenter-panel}"
 DB_HOST="${CC_DB_HOST:-localhost}"
@@ -23,6 +23,11 @@ SUPERVISOR_TECH="${CC_SUPERVISOR_TECH:-PJSIP}"
 ADMIN_USER="${CC_ADMIN_USER:-admin}"
 ADMIN_NAME="${CC_ADMIN_NAME:-Administrador}"
 NON_INTERACTIVE="${CC_NON_INTERACTIVE:-0}"
+AUTO_INSTALL_CALLCENTER="${CC_AUTO_INSTALL_CALLCENTER:-1}"
+CALLCENTER_REPO="${CC_CALLCENTER_REPO:-https://github.com/ISSABELPBX/callcenter-issabel5.git}"
+# Revisión verificada de Call Center Community V5.0.0-1. Puede sobrescribirse con
+# CC_CALLCENTER_GIT_REF=master para utilizar la revisión más reciente.
+CALLCENTER_GIT_REF="${CC_CALLCENTER_GIT_REF:-82843e063722274276e787c795d8ae20740bd569}"
 
 say(){ printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 ok(){ printf '\033[1;32m[OK]\033[0m %s\n' "$*"; }
@@ -71,20 +76,123 @@ fi
 MYSQL=(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_ADMIN_USER" --default-character-set=utf8mb4)
 mysql_run(){ MYSQL_PWD="$DB_ADMIN_PASS" "${MYSQL[@]}" "$@"; }
 
-say "Verificando bases de Issabel"
+schema_exists(){
+  local db="$1"
+  [[ "$(mysql_run -NBe "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$(sql_escape "$db")';")" == "1" ]]
+}
+
+table_exists(){
+  local db="$1" tb="$2"
+  [[ "$(mysql_run -NBe "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$(sql_escape "$db")' AND TABLE_NAME='$(sql_escape "$tb")';")" == "1" ]]
+}
+
+CALLCENTER_REQUIRED_TABLES=(
+  agent audit break call_entry calls campaign campaign_entry queue_call_entry
+  call_recording call_progress_log current_calls current_call_entry
+  form_data_recolected form_data_recolected_entry form_field
+)
+
+callcenter_missing_tables(){
+  local tb missing=()
+  if ! schema_exists "$DB_CALLCENTER"; then
+    printf '%s\n' "__DATABASE__"
+    return 0
+  fi
+  for tb in "${CALLCENTER_REQUIRED_TABLES[@]}"; do
+    table_exists "$DB_CALLCENTER" "$tb" || missing+=("$tb")
+  done
+  ((${#missing[@]} > 0)) && printf '%s\n' "${missing[@]}"
+  return 0
+}
+
+callcenter_installation_complete(){
+  local missing
+  missing="$(callcenter_missing_tables)"
+  [[ -z "$missing" ]] || return 1
+  [[ -d /var/www/html/modules/agent_console ]] || return 1
+  [[ -f /etc/systemd/system/issabeldialer.service || -f /usr/lib/systemd/system/issabeldialer.service ]] || return 1
+  return 0
+}
+
+install_or_repair_callcenter(){
+  [[ "$AUTO_INSTALL_CALLCENTER" == "1" ]] || die "Issabel Call Center no está completo y la instalación automática está desactivada (CC_AUTO_INSTALL_CALLCENTER=0)."
+
+  say "Issabel Call Center no está instalado/completo. Instalando dependencia automáticamente"
+  warn "Se instalará Call Center Community para Issabel 5 desde: $CALLCENTER_REPO"
+  warn "Revisión configurada: $CALLCENTER_GIT_REF"
+
+  [[ -f /etc/rocky-release ]] || die "La instalación automática de Call Center incluida en este paquete está diseñada para Issabel 5 sobre Rocky Linux 8. Instale un Call Center compatible manualmente o use CC_AUTO_INSTALL_CALLCENTER=0."
+  command -v asterisk >/dev/null 2>&1 || die "No se encontró Asterisk. Verifique primero la instalación base de Issabel."
+  asterisk -rx "core show version" >/dev/null 2>&1 || die "Asterisk no responde. Inicie Asterisk antes de instalar el módulo Call Center."
+
+  if ! command -v git >/dev/null 2>&1; then
+    say "Instalando git (requerido para obtener Issabel Call Center)"
+    if command -v dnf >/dev/null 2>&1; then dnf -y install git
+    elif command -v yum >/dev/null 2>&1; then yum -y install git
+    else die "No se encontró dnf/yum para instalar git."; fi
+  fi
+
+  local dep_installer="$SOURCE_DIR/bin/ensure_issabel_callcenter.sh"
+  [[ -f "$dep_installer" ]] || die "Falta el instalador de dependencia: $dep_installer"
+
+  CC_CALLCENTER_REPO="$CALLCENTER_REPO" \
+  CC_CALLCENTER_GIT_REF="$CALLCENTER_GIT_REF" \
+  bash "$dep_installer" || die "Falló la instalación automática de Issabel Call Center. Revise /var/log/callcenter-panel-callcenter-install.log"
+
+  # La instalación oficial no aborta necesariamente ante todos los fallos internos,
+  # por eso el panel hace una verificación independiente antes de continuar.
+  local retry missing
+  for retry in 1 2 3 4 5; do
+    missing="$(callcenter_missing_tables)"
+    [[ -z "$missing" ]] && break
+    sleep 2
+  done
+  missing="$(callcenter_missing_tables)"
+  [[ -z "$missing" ]] || die "Call Center fue ejecutado, pero siguen faltando componentes de base de datos: $(echo "$missing" | tr '\n' ' '). Revise /var/log/callcenter-panel-callcenter-install.log"
+
+  [[ -d /var/www/html/modules/agent_console ]] || die "La base de Call Center existe, pero no se instaló /var/www/html/modules/agent_console."
+  if [[ -f /etc/systemd/system/issabeldialer.service || -f /usr/lib/systemd/system/issabeldialer.service ]]; then
+    systemctl daemon-reload || true
+    systemctl enable issabeldialer >/dev/null 2>&1 || true
+    systemctl is-active --quiet issabeldialer || systemctl restart issabeldialer >/dev/null 2>&1 || true
+    systemctl is-active --quiet issabeldialer || die "El servicio issabeldialer quedó inactivo después de la instalación. Ejecute: systemctl status issabeldialer -l"
+  else
+    die "No se instaló el servicio issabeldialer. Revise el log de instalación."
+  fi
+  ok "Issabel Call Center quedó instalado y validado."
+}
+
+say "Verificando plataforma y bases de Issabel"
 mysql_run -NBe "SELECT VERSION();" >/dev/null || die "No se pudo conectar a MySQL/MariaDB con las credenciales indicadas."
-for db in "$DB_CALLCENTER" "$DB_CDR" "$DB_ASTERISK"; do
-  exists="$(mysql_run -NBe "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$(sql_escape "$db")';")"
-  [[ "$exists" == "1" ]] || die "No existe la base requerida: $db"
+
+# Estas bases pertenecen a la instalación base de Issabel y deben existir antes
+# de intentar instalar el módulo Call Center.
+for db in "$DB_CDR" "$DB_ASTERISK"; do
+  schema_exists "$db" || die "No existe la base requerida de Issabel: $db"
   ok "Base encontrada: $db"
 done
 
-for spec in "$DB_CALLCENTER:agent" "$DB_CALLCENTER:audit" "$DB_CALLCENTER:call_entry" "$DB_CDR:cdr"; do
-  db="${spec%%:*}"; tb="${spec##*:}"
-  exists="$(mysql_run -NBe "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$(sql_escape "$db")' AND TABLE_NAME='$(sql_escape "$tb")';")"
-  [[ "$exists" == "1" ]] || die "Falta la tabla requerida ${db}.${tb}. Verifique que Issabel Call Center esté instalado/configurado."
-  ok "Tabla encontrada: ${db}.${tb}"
+table_exists "$DB_CDR" "cdr" || die "Falta la tabla requerida ${DB_CDR}.cdr. Verifique primero la instalación base de Issabel."
+ok "Tabla encontrada: ${DB_CDR}.cdr"
+
+if callcenter_installation_complete; then
+  ok "Issabel Call Center detectado: base, módulos web y servicio presentes."
+else
+  missing="$(callcenter_missing_tables)"
+  if [[ -n "$missing" ]]; then
+    warn "Call Center incompleto. Componentes de base faltantes: $(echo "$missing" | tr '\n' ' ')"
+  else
+    warn "La base de Call Center está completa, pero faltan módulos web o el servicio issabeldialer."
+  fi
+  install_or_repair_callcenter
+fi
+
+# Validación final de todas las tablas que usa el panel. Esto evita que la
+# instalación continúe y falle más adelante al abrir reportes/productividad.
+for tb in "${CALLCENTER_REQUIRED_TABLES[@]}"; do
+  table_exists "$DB_CALLCENTER" "$tb" || die "Falta la tabla requerida ${DB_CALLCENTER}.${tb} después de validar Call Center."
 done
+ok "Base de Issabel Call Center validada (${#CALLCENTER_REQUIRED_TABLES[@]} tablas requeridas)."
 
 APP_DB_PASS="${CC_APP_DB_PASS:-$(random_secret)}"
 AMI_SECRET="${CC_AMI_SECRET:-$(random_secret)}"
@@ -127,7 +235,8 @@ fi
 rm -rf "$TARGET_DIR"
 mkdir -p "$TARGET_DIR"
 cp -a "$SOURCE_DIR/." "$TARGET_DIR/"
-rm -f "$TARGET_DIR/install.sh" "$TARGET_DIR/bin/render_config.php" 2>/dev/null || true
+# Archivos de instalación no son necesarios dentro del DocumentRoot.
+rm -f "$TARGET_DIR/install.sh" "$TARGET_DIR/bin/render_config.php" "$TARGET_DIR/bin/ensure_issabel_callcenter.sh" 2>/dev/null || true
 rm -rf "$TARGET_DIR/docs" "$TARGET_DIR/sql" 2>/dev/null || true
 rm -f "$TARGET_DIR"/*.md "$TARGET_DIR"/VERSION.txt 2>/dev/null || true
 
@@ -146,6 +255,24 @@ chown -R "$WEB_USER":"$WEB_GROUP" "$TARGET_DIR/cache"
 chmod 0770 "$TARGET_DIR/cache"
 find "$TARGET_DIR/cache" -type f -exec chmod 0660 {} \;
 chmod 0640 "$TARGET_DIR/config.php"
+
+# Declaración explícita para Apache 2.4/Issabel. Evita 403 por reglas heredadas
+# y garantiza que index.php sea el documento inicial del panel.
+if [[ -d /etc/httpd/conf.d ]]; then
+  APACHE_PANEL_CONF="/etc/httpd/conf.d/callcenter-panel.conf"
+  cat > "$APACHE_PANEL_CONF" <<EOF
+<Directory "${TARGET_DIR}">
+    Options -Indexes
+    AllowOverride All
+    Require all granted
+    DirectoryIndex index.php
+</Directory>
+EOF
+  chown root:root "$APACHE_PANEL_CONF"
+  chmod 0644 "$APACHE_PANEL_CONF"
+  restorecon "$APACHE_PANEL_CONF" 2>/dev/null || true
+fi
+
 ok "Código instalado en $TARGET_DIR"
 
 say "Configurando AMI dedicado"
@@ -158,6 +285,7 @@ if [[ -d /etc/asterisk ]]; then
     cp -a "$MANAGER_MAIN" "${MANAGER_MAIN}.backup_$(date +%Y%m%d_%H%M%S)"
     printf '\n#include manager_custom.conf\n' >> "$MANAGER_MAIN"
   fi
+  # Elimina un bloque anterior gestionado por este instalador.
   awk '
     BEGIN{skip=0}
     /^; BEGIN CYBERMATICA CCPANEL$/{skip=1; next}
@@ -194,6 +322,8 @@ if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" != "D
     setsebool -P httpd_can_network_connect 1 >/dev/null 2>&1 || warn "No se pudo activar httpd_can_network_connect."
   fi
 
+  # Todo el panel debe ser legible por httpd. Al copiar desde /root con cp -a,
+  # los archivos pueden conservar un contexto SELinux que Apache no puede leer.
   if command -v semanage >/dev/null 2>&1; then
     semanage fcontext -a -t httpd_sys_content_t "${TARGET_DIR}(/.*)?" 2>/dev/null \
       || semanage fcontext -m -t httpd_sys_content_t "${TARGET_DIR}(/.*)?" 2>/dev/null \
