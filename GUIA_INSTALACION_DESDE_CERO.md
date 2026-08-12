@@ -1,48 +1,46 @@
 # Guía de instalación desde cero
-## Cybermatica Call Center Monitor v1.0 para Issabel
+## Cybermatica Call Center Monitor v1.0.2 para Issabel 5
 
-Esta guía asume que el panel se instalará en el mismo servidor donde funcionan Issabel y Asterisk.
+Esta versión puede instalar el módulo **Issabel Call Center** automáticamente cuando detecta que está ausente o incompleto.
 
-## 1. Antes de comenzar
+## 1. Plataforma soportada
 
-Realice un backup del servidor y de las bases de datos. El panel no reemplaza Issabel ni Asterisk: utiliza la información registrada por Issabel Call Center.
-
-Bases utilizadas:
-
-- `call_center`: agentes, auditoría, pausas, campañas y llamadas.
-- `asteriskcdrdb`: CDR de Asterisk.
-- `asterisk`: datos auxiliares de la PBX.
-- `callcenter_panel`: base propia para usuarios, permisos, SLA, configuración y auditoría.
-
-## 2. Requisitos
-
-Compruebe:
-
-```bash
-php -v
-php -m | egrep -i 'PDO|pdo_mysql|json'
-mysql --version
-asterisk -V
-systemctl status httpd --no-pager
-```
-
-Se requiere PHP 7.2 o superior y PDO MySQL. Deben existir como mínimo:
+La instalación automática del módulo Call Center está orientada a:
 
 ```text
-call_center.agent
-call_center.audit
-call_center.call_entry
-asteriskcdrdb.cdr
+Issabel 5
+Rocky Linux 8
+Asterisk 18
+Apache / PHP
+MariaDB / MySQL
 ```
 
-## 3. Instalación automática
+El panel también requiere las bases base de Issabel:
 
-Descargue el archivo `issabel-callcenter-monitor-v1.0.zip` y súbalo al servidor, por ejemplo a `/root`.
+```text
+asterisk
+asteriskcdrdb
+```
+
+Si la plataforma no es Rocky Linux, el instalador no intentará instalar automáticamente el Call Center para evitar aplicar una versión incompatible.
+
+## 2. Backup previo
+
+Antes de instalar en producción haga snapshot o backup del servidor y, si existe una instalación previa del panel:
+
+```bash
+cp -a /var/www/html/callcenter-panel \
+  /root/callcenter-panel_backup_$(date +%F_%H%M)
+```
+
+## 3. Instalación
+
+Descargue la Release v1.0.2, copie el ZIP a `/root` y ejecute:
 
 ```bash
 cd /root
-unzip issabel-callcenter-monitor-v1.0.zip
-cd issabel-callcenter-monitor-v1.0
+unzip issabel-callcenter-monitor-v1.0.2.zip
+cd issabel-callcenter-monitor-v1.0.2
 sudo bash install.sh
 ```
 
@@ -65,47 +63,122 @@ Administrador BD: root
 Usuario del panel: admin
 ```
 
-La contraseña del panel debe tener al menos 10 caracteres.
+## 4. Detección automática de Issabel Call Center
 
-## 4. Base y permisos MySQL
+Antes de crear el panel, v1.0.2 verifica:
 
-El instalador crea la base:
+- base `asteriskcdrdb`;
+- base `asterisk`;
+- tabla `asteriskcdrdb.cdr`;
+- base `call_center`;
+- tablas operativas utilizadas por el panel;
+- `/var/www/html/modules/agent_console`;
+- `issabeldialer.service`.
+
+Las tablas de Call Center verificadas incluyen:
+
+```text
+agent
+audit
+break
+call_entry
+calls
+campaign
+campaign_entry
+queue_call_entry
+call_recording
+call_progress_log
+current_calls
+current_call_entry
+form_data_recolected
+form_data_recolected_entry
+form_field
+```
+
+Si falta Call Center o la instalación está incompleta, el instalador obtiene:
+
+```text
+https://github.com/ISSABELPBX/callcenter-issabel5.git
+```
+
+y utiliza por defecto la revisión:
+
+```text
+82843e063722274276e787c795d8ae20740bd569
+```
+
+Después ejecuta el instalador Community V5 en modo local y vuelve a comprobar las tablas, `agent_console` y el servicio `issabeldialer` antes de continuar.
+
+## 5. Log de la dependencia
+
+Si la instalación automática de Call Center falla, revise:
+
+```bash
+tail -n 150 /var/log/callcenter-panel-callcenter-install.log
+```
+
+También puede revisar:
+
+```bash
+systemctl status issabeldialer -l --no-pager
+journalctl -u issabeldialer -n 100 --no-pager
+```
+
+## 6. Desactivar instalación automática
+
+Para administrar Call Center manualmente:
+
+```bash
+CC_AUTO_INSTALL_CALLCENTER=0 sudo -E bash install.sh
+```
+
+En ese modo, si Call Center no está completo, el instalador se detiene sin modificarlo.
+
+## 7. Cambiar repositorio o revisión
+
+Repositorio alternativo:
+
+```bash
+CC_CALLCENTER_REPO=https://github.com/OTRO/REPO.git sudo -E bash install.sh
+```
+
+Usar `master` del repositorio configurado:
+
+```bash
+CC_CALLCENTER_GIT_REF=master sudo -E bash install.sh
+```
+
+Para producción se recomienda mantener la revisión fijada por la versión del panel hasta probar una nueva.
+
+Consulte también `DEPENDENCIA_ISSABEL_CALLCENTER.md`.
+
+## 8. Base propia y usuario MySQL
+
+El instalador crea:
 
 ```text
 callcenter_panel
 ```
 
-Y un usuario técnico `ccpanel@localhost` con permisos mínimos:
+Y un usuario técnico `ccpanel@localhost` con lectura sobre:
 
-```sql
-GRANT SELECT, SHOW VIEW ON call_center.* TO 'ccpanel'@'localhost';
-GRANT SELECT, SHOW VIEW ON asteriskcdrdb.* TO 'ccpanel'@'localhost';
-GRANT SELECT, SHOW VIEW ON asterisk.* TO 'ccpanel'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON callcenter_panel.* TO 'ccpanel'@'localhost';
+```text
+call_center
+asteriskcdrdb
+asterisk
 ```
 
-PHP no necesita utilizar `root` durante el funcionamiento normal.
+y lectura/escritura sobre:
 
-## 5. Usuario administrador
-
-El instalador crea el superadministrador inicial. La contraseña se almacena mediante `password_hash()`.
-
-Después del primer ingreso puede crear usuarios adicionales y asignar permisos individuales para monitoreo, reportes, grabaciones, supervisión, exportaciones, configuración SLA y administración.
-
-## 6. Configuración AMI
-
-Se crea un usuario AMI dedicado en `/etc/asterisk/manager_custom.conf`, restringido a localhost:
-
-```ini
-[ccpanel_monitor]
-secret = CLAVE_GENERADA
-deny = 0.0.0.0/0.0.0.0
-permit = 127.0.0.1/255.255.255.255
-read = system,call
-write = call,originate
+```text
+callcenter_panel
 ```
 
-Después se ejecuta:
+PHP no utiliza `root` durante la operación normal.
+
+## 9. AMI
+
+Se crea un usuario AMI dedicado y restringido a localhost. El instalador modifica `manager_custom.conf` y realiza:
 
 ```bash
 asterisk -rx "manager reload"
@@ -113,7 +186,35 @@ asterisk -rx "manager reload"
 
 No es necesario reiniciar Asterisk.
 
-## 7. Acceso al panel
+## 10. Apache y SELinux
+
+v1.0.2 conserva la corrección del error 403 incluida desde v1.0.1:
+
+- `DirectoryIndex index.php`;
+- regla explícita `<Directory>` para el panel;
+- `httpd_sys_content_t` para el código;
+- `httpd_sys_rw_content_t` para `cache/`;
+- validación de Apache antes del reinicio.
+
+Si una instalación anterior devuelve:
+
+```text
+Forbidden
+You don't have permission to access this resource.
+```
+
+ejecute:
+
+```bash
+cd /root
+curl -fsSL \
+https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
+-o REPARAR_403.sh
+chmod +x REPARAR_403.sh
+sudo ./REPARAR_403.sh /var/www/html/callcenter-panel
+```
+
+## 11. Acceso
 
 Por defecto:
 
@@ -121,92 +222,77 @@ Por defecto:
 http://IP_DEL_ISSABEL/callcenter-panel/
 ```
 
-Para comprobar errores PHP:
-
-```bash
-cd /var/www/html/callcenter-panel
-find . -name '*.php' -print0 | xargs -0 -n1 php -l
-```
-
-## 8. Wallboard para TV
-
-Cree un usuario destinado a la pantalla y asigne únicamente:
-
-```text
-live.view
-```
-
-Abra:
+Wallboard:
 
 ```text
 http://IP_DEL_ISSABEL/callcenter-panel/live.php?tv=1
 ```
 
-El modo TV oculta elementos administrativos y presenta estados y KPIs para visualización a distancia.
+Para la TV cree un usuario con únicamente el permiso:
 
-## 9. SLA
+```text
+live.view
+```
 
-La configuración inicial es:
+## 12. SLA
+
+Configuración inicial:
 
 ```text
 Meta: 80 %
 Tiempo: 20 segundos
 ```
 
-Es decir, se busca responder al menos el 80 % de las llamadas dentro de 20 segundos. Puede modificarse desde:
-
-**Administración → Configuración SLA**
-
-Cambiar el tiempo SLA modifica qué llamadas califican como atendidas dentro del SLA. Cambiar la meta porcentual modifica el criterio de `CUMPLE / NO CUMPLE`.
-
-## 10. Grabaciones
-
-Las rutas habituales son:
+Puede modificarse desde:
 
 ```text
-/var/spool/asterisk/monitor
-/var/spool/asterisk/monitoring
+Administración > Configuración SLA
 ```
 
-Si el panel no puede leerlas, revise propietario, grupo, ACL y SELinux. No aplique permisos `777` de forma indiscriminada.
+## 13. Diagnóstico
 
-## 11. SELinux
-
-Si SELinux está activo, el instalador intenta habilitar la conexión necesaria desde Apache y asignar contexto escribible solamente a `cache/`.
-
-Compruebe:
-
-```bash
-getenforce
-ls -Zd /var/www/html/callcenter-panel/cache
-```
-
-## 12. Diagnóstico
-
-Cuando `bin/diagnostico.php` esté incluido en la distribución completa puede ejecutar:
+Después de instalar:
 
 ```bash
 cd /var/www/html/callcenter-panel
 sudo -u apache php bin/diagnostico.php
 ```
 
-Revise conexión a MySQL, AMI, cache y directorios de grabaciones.
-
-## 13. Recomendaciones de producción
-
-- Use HTTPS si el panel será accesible fuera de una red confiable.
-- Mantenga AMI limitado a `127.0.0.1` cuando sea posible.
-- No utilice MySQL `root` como usuario permanente de la aplicación.
-- No publique `config.php` generado con credenciales reales.
-- Haga backup antes de actualizar.
-- Mantenga Issabel, Asterisk, PHP y el sistema operativo actualizados.
-
-## 14. Actualización
-
-Antes de reemplazar una versión instalada:
+Para comprobar sintaxis PHP:
 
 ```bash
-cp -a /var/www/html/callcenter-panel /var/www/html/callcenter-panel_backup_$(date +%F_%H%M)
+find /var/www/html/callcenter-panel -name '*.php' -print0 \
+  | xargs -0 -n1 php -l
 ```
 
-Conserve también un respaldo de `callcenter_panel` y revise las migraciones SQL incluidas con la nueva versión.
+Para revisar Apache:
+
+```bash
+apachectl -t
+systemctl status httpd --no-pager
+```
+
+## 14. Problemas con Call Center
+
+Compruebe:
+
+```bash
+systemctl status issabeldialer -l --no-pager
+ls -ld /var/www/html/modules/agent_console
+mysql -u root -p -e "SHOW TABLES FROM call_center;"
+```
+
+Si el instalador automático se ejecutó, el primer archivo a revisar es:
+
+```text
+/var/log/callcenter-panel-callcenter-install.log
+```
+
+## 15. Seguridad recomendada
+
+- haga backup antes de instalar o actualizar;
+- no use MySQL `root` como usuario permanente del panel;
+- mantenga AMI restringido a `127.0.0.1` cuando panel y Asterisk estén en el mismo servidor;
+- use HTTPS si el panel se expone fuera de una red administrativa;
+- no publique el `config.php` generado en producción;
+- pruebe nuevas revisiones de Issabel Call Center antes de cambiar `CC_CALLCENTER_GIT_REF`.
