@@ -20,7 +20,7 @@ find "$TARGET_DIR" -type f -exec chmod 0644 {} \;
 [[ -d /var/www ]] && chmod 0755 /var/www || true
 [[ -d /var/www/html ]] && chmod 0755 /var/www/html || true
 PARENT_DIR="$(dirname "$TARGET_DIR")"
-[[ -d "$PARENT_DIR" ]] && chmod a+rx "$PARENT_DIR" || true
+[[ -d "$PARENT_DIR" ]] && chmod a+x "$PARENT_DIR" || true
 
 if [[ -f "$TARGET_DIR/config.php" ]]; then
   chown root:"$WEB_GROUP" "$TARGET_DIR/config.php"
@@ -54,6 +54,12 @@ if [[ -d /etc/httpd/conf.d ]]; then
     <FilesMatch "\.(sql|md|log|bak|zip)$">
         Require all denied
     </FilesMatch>
+
+    <IfModule mod_headers.c>
+        Header always set X-Frame-Options "SAMEORIGIN"
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    </IfModule>
 </Directory>
 APACHEEOF
   chown root:root "$APACHE_PANEL_CONF"
