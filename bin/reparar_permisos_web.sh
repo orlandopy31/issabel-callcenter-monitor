@@ -14,7 +14,7 @@ warn(){ printf '\033[1;33m[AVISO]\033[0m %s\n' "$*"; }
 die(){ printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 
 echo "[1/6] Corrigiendo permisos del DocumentRoot..."
-chown -R root:root "$TARGET_DIR"
+chown -R root:"$WEB_GROUP" "$TARGET_DIR"
 find "$TARGET_DIR" -type d -exec chmod 0755 {} \;
 find "$TARGET_DIR" -type f -exec chmod 0644 {} \;
 [[ -d /var/www ]] && chmod 0755 /var/www || true
@@ -27,13 +27,13 @@ if [[ -f "$TARGET_DIR/config.php" ]]; then
   chmod 0640 "$TARGET_DIR/config.php"
 fi
 if [[ -f "$TARGET_DIR/.htaccess" ]]; then
-  chown root:root "$TARGET_DIR/.htaccess"
+  chown root:"$WEB_GROUP" "$TARGET_DIR/.htaccess"
   chmod 0644 "$TARGET_DIR/.htaccess"
 fi
 if [[ -d "$TARGET_DIR/cache" ]]; then
   chown -R "$WEB_USER":"$WEB_GROUP" "$TARGET_DIR/cache"
-  find "$TARGET_DIR/cache" -type d -exec chmod 0775 {} \;
-  find "$TARGET_DIR/cache" -type f -exec chmod 0664 {} \;
+  find "$TARGET_DIR/cache" -type d -exec chmod 0770 {} \;
+  find "$TARGET_DIR/cache" -type f -exec chmod 0660 {} \;
 fi
 ok "Permisos Unix corregidos."
 
