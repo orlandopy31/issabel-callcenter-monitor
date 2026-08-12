@@ -1,36 +1,36 @@
 # Cybermatica Issabel Call Center Monitor
 
-Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, productividad, SLA, grabaciones y reportería operativa.
+Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, productividad, SLA, grabaciones, licenciamiento y reportería operativa.
 
 ## Versión principal recomendada
 
-**Versión estable principal: v1.0.4**
+**Versión estable principal: v1.0.5**
 
 Esta es la versión recomendada para nuevas instalaciones y actualizaciones.
 
 **Descarga directa:**
 
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.4/issabel-callcenter-monitor-v1.0.4.zip
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.5/issabel-callcenter-monitor-v1.0.5.zip
 
 **Release:**
 
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/tag/v1.0.4
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/tag/v1.0.5
 
 SHA-256 oficial:
 
 ```text
-5475d3773f1585b73a6d5bf2f46770c1d8d55b4885a9771e7b79ea17f50b23e6
+a4af7feb966f7f8c8e9dbc1385a346972c1f632880dc4e4b8caf56f85bdc1395
 ```
 
-## Instalación paso a paso de v1.0.4
+## Instalación paso a paso de v1.0.5
 
-### Paso 1 — Ingresar como root
+### 1. Ingresar como root
 
 ```bash
 sudo -i
 ```
 
-### Paso 2 — Instalar herramientas necesarias
+### 2. Instalar herramientas necesarias
 
 En Issabel 5 / Rocky Linux 8:
 
@@ -38,46 +38,37 @@ En Issabel 5 / Rocky Linux 8:
 dnf -y install curl wget unzip
 ```
 
-### Paso 3 — Descargar el paquete principal v1.0.4
+### 3. Descargar el paquete oficial
 
 ```bash
 cd /root
-
-wget -O issabel-callcenter-monitor-v1.0.4.zip \
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.4/issabel-callcenter-monitor-v1.0.4.zip
+wget -O issabel-callcenter-monitor-v1.0.5.zip \
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.5/issabel-callcenter-monitor-v1.0.5.zip
 ```
 
-También puede utilizar `curl`:
-
-```bash
-curl -fL \
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.4/issabel-callcenter-monitor-v1.0.4.zip \
--o /root/issabel-callcenter-monitor-v1.0.4.zip
-```
-
-### Paso 4 — Verificar integridad
+### 4. Verificar integridad
 
 ```bash
 cd /root
-sha256sum issabel-callcenter-monitor-v1.0.4.zip
+sha256sum issabel-callcenter-monitor-v1.0.5.zip
 ```
 
 Debe devolver:
 
 ```text
-5475d3773f1585b73a6d5bf2f46770c1d8d55b4885a9771e7b79ea17f50b23e6  issabel-callcenter-monitor-v1.0.4.zip
+a4af7feb966f7f8c8e9dbc1385a346972c1f632880dc4e4b8caf56f85bdc1395  issabel-callcenter-monitor-v1.0.5.zip
 ```
 
-### Paso 5 — Descomprimir
+### 5. Descomprimir
 
 ```bash
 cd /root
-rm -rf issabel-callcenter-monitor-v1.0.4
-unzip issabel-callcenter-monitor-v1.0.4.zip
-cd issabel-callcenter-monitor-v1.0.4
+rm -rf issabel-callcenter-monitor-v1.0.5
+unzip issabel-callcenter-monitor-v1.0.5.zip
+cd issabel-callcenter-monitor-v1.0.5
 ```
 
-### Paso 6 — Ejecutar el instalador
+### 6. Ejecutar el instalador
 
 ```bash
 chmod +x install.sh
@@ -95,21 +86,11 @@ El instalador solicitará normalmente:
 - nombre del administrador;
 - contraseña inicial del panel.
 
-## Instalación automática de Issabel Call Center
+## Issabel Call Center
 
-Antes de instalar el monitor, v1.0.4 verifica:
+Antes de instalar el monitor, v1.0.5 verifica Issabel, Asterisk, MariaDB/MySQL, `asteriskcdrdb`, `asterisk`, la base `call_center`, las tablas operativas, `agent_console` e `issabeldialer`.
 
-- Asterisk;
-- PHP y PDO MySQL;
-- MariaDB/MySQL;
-- `asterisk`;
-- `asteriskcdrdb` y `asteriskcdrdb.cdr`;
-- base `call_center`;
-- tablas de Call Center utilizadas por el panel;
-- módulo `agent_console`;
-- servicio `issabeldialer`.
-
-Si **Issabel Call Center no está instalado o está incompleto**, el sistema puede instalarlo/repararlo automáticamente en **Issabel 5 sobre Rocky Linux 8** y vuelve a validar los componentes antes de continuar.
+Si **Issabel Call Center no está instalado o está incompleto**, el instalador puede instalarlo/repararlo automáticamente en **Issabel 5 sobre Rocky Linux 8** y vuelve a validar sus componentes antes de continuar.
 
 Log de esa operación:
 
@@ -117,23 +98,66 @@ Log de esa operación:
 /var/log/callcenter-panel-callcenter-install.log
 ```
 
-Para desactivar la instalación automática:
+## Licencia v1.0.5
 
-```bash
-CC_AUTO_INSTALL_CALLCENTER=0 ./install.sh
-```
+Cada instalación v1.0.5 registra una instalación única contra el servidor de licencias de Cybermatica y obtiene una **Licence Key**.
 
-## Permisos obligatorios del panel
-
-Para que Apache pueda abrir el sistema correctamente y evitar errores como:
+Servidor de licencias:
 
 ```text
-Forbidden
-You don't have permission to access this resource.
-Server unable to read htaccess file, denying access to be safe
+https://www.cybermatica.com.py/licence
 ```
 
-la instalación debe terminar con este esquema:
+La licencia se crea **ACTIVA**. La suspensión o reactivación se realiza **exclusivamente de forma manual** desde el administrador de licencias de Cybermatica.
+
+El licenciamiento no detiene Asterisk ni Issabel; en caso de una suspensión manual se bloquea únicamente el acceso a Cybermatica Issabel Call Center Monitor.
+
+Para comprobar el timer de licencia:
+
+```bash
+systemctl status cybermatica-license-check.timer --no-pager
+systemctl list-timers cybermatica-license-check.timer
+```
+
+Para forzar una validación:
+
+```bash
+php /var/www/html/callcenter-panel/bin/license_check.php
+```
+
+## PASO OBLIGATORIO: aplicar permisos después de instalar
+
+Después de ejecutar `install.sh`, el usuario debe **aplicar y verificar los permisos del panel** antes de abrirlo en el navegador.
+
+Ejecute exactamente:
+
+```bash
+sudo -i
+
+TARGET="/var/www/html/callcenter-panel"
+
+# Permitir que Apache atraviese la ruta web
+chown root:root /var/www /var/www/html
+chmod 755 /var/www /var/www/html
+
+# Código de la aplicación
+chown -R root:apache "$TARGET"
+find "$TARGET" -type d -exec chmod 755 {} \;
+find "$TARGET" -type f -exec chmod 644 {} \;
+
+# Archivos principales
+chown root:apache "$TARGET/index.php" "$TARGET/.htaccess" "$TARGET/config.php"
+chmod 644 "$TARGET/index.php"
+chmod 644 "$TARGET/.htaccess"
+chmod 640 "$TARGET/config.php"
+
+# Directorio escribible
+chown -R apache:apache "$TARGET/cache"
+find "$TARGET/cache" -type d -exec chmod 770 {} \;
+find "$TARGET/cache" -type f -exec chmod 660 {} \;
+```
+
+El resultado esperado es:
 
 ```text
 /var/www/html/callcenter-panel   root:apache     755
@@ -143,55 +167,9 @@ config.php                        root:apache     640
 cache/                            apache:apache   770
 ```
 
-> **Importante:** que los archivos PHP tengan propietario `root` es correcto. El grupo debe ser `apache`. Solamente `cache/` necesita quedar escribible por Apache.
+> Que los archivos PHP tengan propietario `root` es correcto. El grupo debe ser `apache`. Solamente `cache/` debe quedar escribible por Apache.
 
-### Aplicar los permisos manualmente
-
-Si desea comprobar o normalizar los permisos después de la instalación, ejecute exactamente:
-
-```bash
-sudo -i
-
-TARGET="/var/www/html/callcenter-panel"
-
-# Apache debe poder atravesar los directorios padre
-chown root:root /var/www /var/www/html
-chmod 755 /var/www /var/www/html
-
-# Código de la aplicación: root como propietario y apache como grupo
-chown -R root:apache "$TARGET"
-
-# Directorios públicos
-find "$TARGET" -type d -exec chmod 755 {} \;
-
-# Archivos públicos
-find "$TARGET" -type f -exec chmod 644 {} \;
-
-# Archivos principales
-chown root:apache "$TARGET/index.php" "$TARGET/.htaccess" "$TARGET/config.php"
-chmod 644 "$TARGET/index.php"
-chmod 644 "$TARGET/.htaccess"
-chmod 640 "$TARGET/config.php"
-
-# Directorio escribible de la aplicación
-chown -R apache:apache "$TARGET/cache"
-find "$TARGET/cache" -type d -exec chmod 770 {} \;
-find "$TARGET/cache" -type f -exec chmod 660 {} \;
-```
-
-El resultado esperado es:
-
-```text
-/var/www/html/callcenter-panel   root:apache     drwxr-xr-x   755
-index.php                         root:apache     -rw-r--r--   644
-.htaccess                         root:apache     -rw-r--r--   644
-config.php                        root:apache     -rw-r-----   640
-cache/                            apache:apache   drwxrwx---   770
-```
-
-### Verificar que Apache pueda leer los archivos
-
-Ejecute:
+### Verificar lectura real como Apache
 
 ```bash
 runuser -u apache -- test -x /var/www/html/callcenter-panel && echo "OK directorio"
@@ -202,92 +180,29 @@ runuser -u apache -- test -r /var/www/html/callcenter-panel/config.php && echo "
 
 Deben aparecer los cuatro mensajes `OK`.
 
-### Verificación visual de propietario, grupo y permisos
-
-```bash
-namei -l /var/www/html/callcenter-panel/.htaccess
-
-ls -ld \
-/var/www/html/callcenter-panel \
-/var/www/html/callcenter-panel/cache
-
-ls -l \
-/var/www/html/callcenter-panel/index.php \
-/var/www/html/callcenter-panel/.htaccess \
-/var/www/html/callcenter-panel/config.php
-```
-
 ## Apache y SELinux
 
-El instalador también configura:
-
-- contexto SELinux `httpd_sys_content_t` para el panel;
-- contexto SELinux `httpd_sys_rw_content_t` para `cache/`;
-- regla `/etc/httpd/conf.d/callcenter-panel.conf`;
-- `Require all granted`;
-- `DirectoryIndex index.php`;
-- `AllowOverride None` para evitar depender de `.htaccess` al autorizar el acceso.
-
-Para comprobar SELinux:
+Compruebe:
 
 ```bash
+apachectl -t
 getenforce
 ls -ldZ /var/www/html/callcenter-panel
 ls -ldZ /var/www/html/callcenter-panel/cache
 ```
 
-## Reparar una instalación existente con 403 Forbidden
-
-Si el panel ya está instalado y aparece un 403:
+Si aparece un 403 Forbidden puede ejecutar:
 
 ```bash
-sudo -i
 cd /root
-
 curl -fsSL \
 https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
 -o REPARAR_403.sh
-
 chmod +x REPARAR_403.sh
 ./REPARAR_403.sh /var/www/html/callcenter-panel
 ```
 
-Después pruebe:
-
-```text
-http://IP_DEL_ISSABEL/callcenter-panel/
-```
-
-Si continúa el problema:
-
-```bash
-namei -l /var/www/html/callcenter-panel/.htaccess
-ls -ldZ /var /var/www /var/www/html /var/www/html/callcenter-panel
-ls -lZ /var/www/html/callcenter-panel/.htaccess \
-       /var/www/html/callcenter-panel/index.php \
-       /var/www/html/callcenter-panel/config.php
-apachectl -t
-tail -n 100 /var/log/httpd/error_log
-```
-
-## Funciones principales
-
-- Dashboard ejecutivo.
-- Monitoreo en tiempo real de agentes.
-- Wallboard profesional para TV.
-- Escucha, susurro y conferencia mediante AMI + ChanSpy.
-- Productividad por agente.
-- Llamadas recibidas y realizadas.
-- Llamadas abandonadas y devueltas.
-- Campañas salientes.
-- Pausas y sesiones.
-- SLA configurable.
-- Comparativos de llamadas.
-- Grabaciones.
-- Exportaciones CSV/PDF.
-- Usuarios, permisos y auditoría.
-
-## Acceso
+## Primer acceso y uso
 
 Panel:
 
@@ -301,43 +216,74 @@ Wallboard:
 http://IP_DEL_ISSABEL/callcenter-panel/live.php?tv=1
 ```
 
-## SLA
+Después del primer ingreso:
 
-La política inicial es **80 % dentro de 20 segundos (80/20)** y puede modificarse desde **Administración → Configuración SLA**.
+1. compruebe que la licencia aparezca como **ACTIVE**;
+2. cambie o confirme la contraseña administrativa;
+3. cree los usuarios del sistema y asigne permisos;
+4. revise **Administración → Configuración SLA**;
+5. pruebe el Dashboard y Productividad;
+6. compruebe agentes y pausas;
+7. valide abandonadas y devoluciones;
+8. pruebe grabaciones;
+9. configure el usuario de Wallboard si utilizará una TV;
+10. pruebe supervisión AMI/ChanSpy solamente con usuarios autorizados.
 
-## Instalar automáticamente la Release estable más reciente
+## Funciones principales
 
-Aunque **v1.0.4 es actualmente el paquete principal recomendado**, el repositorio conserva `install-latest.sh` para futuras versiones.
+- Dashboard ejecutivo.
+- Monitoreo de agentes en tiempo real.
+- Wallboard profesional para TV.
+- Productividad por agente.
+- Llamadas recibidas y realizadas.
+- Llamadas abandonadas y devueltas.
+- Campañas salientes.
+- Pausas y sesiones.
+- Nivel de servicio / SLA configurable.
+- Grabaciones.
+- Escucha, susurro y conferencia mediante AMI + ChanSpy.
+- Exportaciones CSV/PDF.
+- Usuarios y permisos granulares.
+- Auditoría.
+- Licence Key por instalación con suspensión/reactivación manual centralizada.
+
+## Diagnóstico
 
 ```bash
-sudo -i
-cd /root
-
-curl -fsSL \
-https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/install-latest.sh \
--o install-latest.sh
-
-chmod +x install-latest.sh
-./install-latest.sh
+cd /var/www/html/callcenter-panel
+sudo -u apache php bin/diagnostico.php
 ```
 
-Mientras v1.0.4 sea la última Release estable, este procedimiento instalará también v1.0.4.
+También revise:
+
+```bash
+systemctl status httpd --no-pager
+systemctl status php-fpm --no-pager
+systemctl status issabeldialer --no-pager
+systemctl status cybermatica-license-check.timer --no-pager
+asterisk -rx "core show version"
+```
+
+## Documentación
+
+- [Guía de instalación desde cero](GUIA_INSTALACION_DESDE_CERO.md)
+- [Guía de instalación y uso v1.0.5](GUIA_INSTALACION_Y_USO_v1.0.5.md)
+- [Dependencia Issabel Call Center](DEPENDENCIA_ISSABEL_CALLCENTER.md)
+- [Seguridad](SECURITY.md)
 
 ## Seguridad
 
-- La aplicación no usa MySQL `root` durante el funcionamiento normal.
-- Se crea un usuario MySQL técnico exclusivo.
-- AMI utiliza un usuario separado restringido a `127.0.0.1` cuando panel y Asterisk están en el mismo servidor.
-- Las contraseñas de usuarios se almacenan con `password_hash()`.
-- `config.php` queda fuera del acceso HTTP directo y con permisos restringidos.
-- El código PHP queda `root:apache`; Apache puede leerlo pero no modificarlo.
-- No utilice `chmod 777` sobre el panel.
-- Realice backup o snapshot antes de actualizar una central en producción.
+- no use `chmod 777` sobre el panel;
+- el código PHP debe quedar `root:apache`;
+- solamente `cache/` debe ser escribible por Apache;
+- PHP no utiliza MySQL `root` durante el funcionamiento normal;
+- AMI debe mantenerse restringido a localhost cuando panel y Asterisk están en el mismo servidor;
+- realice backup o snapshot antes de instalar o actualizar una central en producción.
 
 ## Versión
 
 ```text
-1.0.4
+1.0.5
 ```
 
 ## Proyecto
