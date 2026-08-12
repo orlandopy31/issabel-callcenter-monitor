@@ -1,11 +1,11 @@
 # Guía de instalación desde cero
-## Cybermatica Call Center Monitor v1.0.2 para Issabel 5
+## Cybermatica Issabel Call Center Monitor v1.0.5
 
-Esta versión puede instalar el módulo **Issabel Call Center** automáticamente cuando detecta que está ausente o incompleto.
+Esta guía explica cómo instalar **v1.0.5**, registrar la licencia, aplicar los permisos obligatorios y comprobar que el sistema quede operativo.
 
 ## 1. Plataforma soportada
 
-La instalación automática del módulo Call Center está orientada a:
+La instalación está orientada principalmente a:
 
 ```text
 Issabel 5
@@ -15,33 +15,87 @@ Apache / PHP
 MariaDB / MySQL
 ```
 
-El panel también requiere las bases base de Issabel:
+Bases esperadas de Issabel:
 
 ```text
 asterisk
 asteriskcdrdb
 ```
 
-Si la plataforma no es Rocky Linux, el instalador no intentará instalar automáticamente el Call Center para evitar aplicar una versión incompatible.
+Si Issabel Call Center falta o está incompleto, v1.0.5 puede instalarlo/repararlo automáticamente en Issabel 5 sobre Rocky Linux 8.
 
-## 2. Backup previo
+## 2. Requisitos previos
 
-Antes de instalar en producción haga snapshot o backup del servidor y, si existe una instalación previa del panel:
+Ingrese como root:
+
+```bash
+sudo -i
+```
+
+Instale utilidades básicas:
+
+```bash
+dnf -y install curl wget unzip
+```
+
+Compruebe:
+
+```bash
+php -v
+mysql --version
+asterisk -V
+systemctl status httpd --no-pager
+```
+
+El servidor debe poder acceder por HTTPS al servidor de licencias:
+
+```text
+https://www.cybermatica.com.py/licence
+```
+
+## 3. Backup previo
+
+Antes de instalar en producción haga snapshot/backup. Si existe una instalación anterior del panel:
 
 ```bash
 cp -a /var/www/html/callcenter-panel \
-  /root/callcenter-panel_backup_$(date +%F_%H%M)
+/root/callcenter-panel_backup_$(date +%F_%H%M)
 ```
 
-## 3. Instalación
-
-Descargue la Release v1.0.2, copie el ZIP a `/root` y ejecute:
+## 4. Descargar v1.0.5
 
 ```bash
 cd /root
-unzip issabel-callcenter-monitor-v1.0.2.zip
-cd issabel-callcenter-monitor-v1.0.2
-sudo bash install.sh
+wget -O issabel-callcenter-monitor-v1.0.5.zip \
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.5/issabel-callcenter-monitor-v1.0.5.zip
+```
+
+Verifique SHA-256:
+
+```bash
+sha256sum /root/issabel-callcenter-monitor-v1.0.5.zip
+```
+
+Resultado esperado:
+
+```text
+a4af7feb966f7f8c8e9dbc1385a346972c1f632880dc4e4b8caf56f85bdc1395  /root/issabel-callcenter-monitor-v1.0.5.zip
+```
+
+## 5. Descomprimir
+
+```bash
+cd /root
+rm -rf issabel-callcenter-monitor-v1.0.5
+unzip issabel-callcenter-monitor-v1.0.5.zip
+cd issabel-callcenter-monitor-v1.0.5
+```
+
+## 6. Ejecutar instalación
+
+```bash
+chmod +x install.sh
+./install.sh
 ```
 
 El instalador solicitará:
@@ -63,147 +117,125 @@ Administrador BD: root
 Usuario del panel: admin
 ```
 
-## 4. Detección automática de Issabel Call Center
+## 7. Issabel Call Center
 
-Antes de crear el panel, v1.0.2 verifica:
+Antes de crear el panel, el instalador verifica:
 
-- base `asteriskcdrdb`;
-- base `asterisk`;
-- tabla `asteriskcdrdb.cdr`;
+- `asteriskcdrdb`;
+- `asterisk`;
+- `asteriskcdrdb.cdr`;
 - base `call_center`;
 - tablas operativas utilizadas por el panel;
 - `/var/www/html/modules/agent_console`;
 - `issabeldialer.service`.
 
-Las tablas de Call Center verificadas incluyen:
+Si Call Center falta o está incompleto, se intenta instalar/reparar antes de continuar.
 
-```text
-agent
-audit
-break
-call_entry
-calls
-campaign
-campaign_entry
-queue_call_entry
-call_recording
-call_progress_log
-current_calls
-current_call_entry
-form_data_recolected
-form_data_recolected_entry
-form_field
-```
-
-Si falta Call Center o la instalación está incompleta, el instalador obtiene:
-
-```text
-https://github.com/ISSABELPBX/callcenter-issabel5.git
-```
-
-y utiliza por defecto la revisión:
-
-```text
-82843e063722274276e787c795d8ae20740bd569
-```
-
-Después ejecuta el instalador Community V5 en modo local y vuelve a comprobar las tablas, `agent_console` y el servicio `issabeldialer` antes de continuar.
-
-## 5. Log de la dependencia
-
-Si la instalación automática de Call Center falla, revise:
+Log:
 
 ```bash
 tail -n 150 /var/log/callcenter-panel-callcenter-install.log
 ```
 
-También puede revisar:
+## 8. Registro de licencia
 
-```bash
-systemctl status issabeldialer -l --no-pager
-journalctl -u issabeldialer -n 100 --no-pager
-```
-
-## 6. Desactivar instalación automática
-
-Para administrar Call Center manualmente:
-
-```bash
-CC_AUTO_INSTALL_CALLCENTER=0 sudo -E bash install.sh
-```
-
-En ese modo, si Call Center no está completo, el instalador se detiene sin modificarlo.
-
-## 7. Cambiar repositorio o revisión
-
-Repositorio alternativo:
-
-```bash
-CC_CALLCENTER_REPO=https://github.com/OTRO/REPO.git sudo -E bash install.sh
-```
-
-Usar `master` del repositorio configurado:
-
-```bash
-CC_CALLCENTER_GIT_REF=master sudo -E bash install.sh
-```
-
-Para producción se recomienda mantener la revisión fijada por la versión del panel hasta probar una nueva.
-
-Consulte también `DEPENDENCIA_ISSABEL_CALLCENTER.md`.
-
-## 8. Base propia y usuario MySQL
-
-El instalador crea:
+Durante la instalación v1.0.5 se registra la instalación contra:
 
 ```text
-callcenter_panel
+https://www.cybermatica.com.py/licence
 ```
 
-Y un usuario técnico `ccpanel@localhost` con lectura sobre:
+Cada servidor recibe:
 
 ```text
-call_center
-asteriskcdrdb
-asterisk
+Installation ID único
+Licence Key única
+Estado inicial ACTIVE
 ```
 
-y lectura/escritura sobre:
+La licencia solamente puede cambiar a `SUSPENDED` mediante una acción manual en el administrador central de Cybermatica. No existe suspensión automática por tiempo, falta de Internet o falta de heartbeat.
+
+Archivos locales de licencia:
 
 ```text
-callcenter_panel
+/var/lib/cybermatica-callcenter/license-client.json
+/var/lib/cybermatica-callcenter/license-state.json
 ```
 
-PHP no utiliza `root` durante la operación normal.
-
-## 9. AMI
-
-Se crea un usuario AMI dedicado y restringido a localhost. El instalador modifica `manager_custom.conf` y realiza:
+Compruebe el timer:
 
 ```bash
-asterisk -rx "manager reload"
+systemctl status cybermatica-license-check.timer --no-pager
+systemctl list-timers cybermatica-license-check.timer
 ```
 
-No es necesario reiniciar Asterisk.
+Forzar comprobación:
 
-## 10. Apache y SELinux
+```bash
+php /var/www/html/callcenter-panel/bin/license_check.php
+```
 
-v1.0.2 conserva la corrección del error 403 incluida desde v1.0.1:
+## 9. PASO OBLIGATORIO: aplicar permisos
 
-- `DirectoryIndex index.php`;
-- regla explícita `<Directory>` para el panel;
-- `httpd_sys_content_t` para el código;
-- `httpd_sys_rw_content_t` para `cache/`;
-- validación de Apache antes del reinicio.
+**El usuario debe ejecutar este paso después de la instalación y antes del primer acceso web.**
 
-Si una instalación anterior devuelve:
+```bash
+sudo -i
+
+TARGET="/var/www/html/callcenter-panel"
+
+chown root:root /var/www /var/www/html
+chmod 755 /var/www /var/www/html
+
+chown -R root:apache "$TARGET"
+find "$TARGET" -type d -exec chmod 755 {} \;
+find "$TARGET" -type f -exec chmod 644 {} \;
+
+chown root:apache "$TARGET/index.php" "$TARGET/.htaccess" "$TARGET/config.php"
+chmod 644 "$TARGET/index.php"
+chmod 644 "$TARGET/.htaccess"
+chmod 640 "$TARGET/config.php"
+
+chown -R apache:apache "$TARGET/cache"
+find "$TARGET/cache" -type d -exec chmod 770 {} \;
+find "$TARGET/cache" -type f -exec chmod 660 {} \;
+```
+
+Permisos esperados:
 
 ```text
-Forbidden
-You don't have permission to access this resource.
+/var/www/html/callcenter-panel   root:apache     755
+index.php                         root:apache     644
+.htaccess                         root:apache     644
+config.php                        root:apache     640
+cache/                            apache:apache   770
 ```
 
-ejecute:
+No utilice `chmod 777`.
+
+## 10. Verificar permisos como Apache
+
+```bash
+runuser -u apache -- test -x /var/www/html/callcenter-panel && echo "OK directorio"
+runuser -u apache -- test -r /var/www/html/callcenter-panel/index.php && echo "OK index.php"
+runuser -u apache -- test -r /var/www/html/callcenter-panel/.htaccess && echo "OK .htaccess"
+runuser -u apache -- test -r /var/www/html/callcenter-panel/config.php && echo "OK config.php"
+```
+
+Deben aparecer los cuatro mensajes `OK`.
+
+## 11. Apache y SELinux
+
+Compruebe:
+
+```bash
+apachectl -t
+getenforce
+ls -ldZ /var/www/html/callcenter-panel
+ls -ldZ /var/www/html/callcenter-panel/cache
+```
+
+Si aparece un 403 Forbidden:
 
 ```bash
 cd /root
@@ -211,15 +243,38 @@ curl -fsSL \
 https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
 -o REPARAR_403.sh
 chmod +x REPARAR_403.sh
-sudo ./REPARAR_403.sh /var/www/html/callcenter-panel
+./REPARAR_403.sh /var/www/html/callcenter-panel
 ```
 
-## 11. Acceso
+## 12. Primer acceso
 
-Por defecto:
+Abra:
 
 ```text
 http://IP_DEL_ISSABEL/callcenter-panel/
+```
+
+Ingrese con el usuario administrador creado durante `install.sh`.
+
+Después del ingreso compruebe:
+
+1. licencia `ACTIVE`;
+2. Dashboard cargando datos;
+3. agentes visibles;
+4. productividad;
+5. llamadas recibidas/realizadas;
+6. abandonadas y devueltas;
+7. SLA;
+8. pausas y sesiones;
+9. grabaciones;
+10. permisos de usuarios.
+
+## 13. Configuración de usuarios
+
+Desde Administración cree usuarios y otorgue solamente los permisos necesarios. Para una TV/Wallboard utilice un usuario limitado a:
+
+```text
+live.view
 ```
 
 Wallboard:
@@ -228,13 +283,7 @@ Wallboard:
 http://IP_DEL_ISSABEL/callcenter-panel/live.php?tv=1
 ```
 
-Para la TV cree un usuario con únicamente el permiso:
-
-```text
-live.view
-```
-
-## 12. SLA
+## 14. SLA
 
 Configuración inicial:
 
@@ -249,50 +298,74 @@ Puede modificarse desde:
 Administración > Configuración SLA
 ```
 
-## 13. Diagnóstico
+## 15. Supervisión
 
-Después de instalar:
+La escucha, susurro y conferencia utilizan AMI y ChanSpy. Asigne esos permisos solamente a supervisores autorizados.
+
+El instalador crea un usuario AMI dedicado restringido a localhost cuando el panel y Asterisk están en el mismo servidor.
+
+## 16. Grabaciones
+
+Compruebe acceso a las rutas habituales:
+
+```text
+/var/spool/asterisk/monitor
+/var/spool/asterisk/monitoring
+```
+
+No aplique permisos `777`. Use grupos/ACL si Apache necesita lectura adicional.
+
+## 17. Diagnóstico
 
 ```bash
 cd /var/www/html/callcenter-panel
 sudo -u apache php bin/diagnostico.php
 ```
 
-Para comprobar sintaxis PHP:
+Servicios:
 
 ```bash
-find /var/www/html/callcenter-panel -name '*.php' -print0 \
-  | xargs -0 -n1 php -l
-```
-
-Para revisar Apache:
-
-```bash
-apachectl -t
 systemctl status httpd --no-pager
+systemctl status php-fpm --no-pager
+systemctl status issabeldialer --no-pager
+systemctl status cybermatica-license-check.timer --no-pager
+asterisk -rx "core show version"
 ```
 
-## 14. Problemas con Call Center
-
-Compruebe:
+Sintaxis PHP:
 
 ```bash
-systemctl status issabeldialer -l --no-pager
-ls -ld /var/www/html/modules/agent_console
-mysql -u root -p -e "SHOW TABLES FROM call_center;"
+find /var/www/html/callcenter-panel -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
 
-Si el instalador automático se ejecutó, el primer archivo a revisar es:
+## 18. Licencia suspendida
+
+Una licencia solamente será suspendida manualmente por Cybermatica. Cuando la instalación recibe un estado firmado `SUSPENDED`, se bloquea el acceso al Monitor.
+
+No se detiene:
 
 ```text
-/var/log/callcenter-panel-callcenter-install.log
+Asterisk
+Issabel
+Issabel Call Center
+las llamadas de la central
 ```
 
-## 15. Seguridad recomendada
+Para reactivar, el administrador central debe cambiar manualmente la licencia a `ACTIVE`. En la siguiente comprobación el Monitor volverá a habilitarse.
 
-- haga backup antes de instalar o actualizar;
-- no use MySQL `root` como usuario permanente del panel;
-- mantenga AMI restringido a `127.0.0.1` cuando panel y Asterisk estén en el mismo servidor;
-- use HTTPS si el panel se expone fuera de una red administrativa;
-- no publique el `config.php` generado en producción;
-- pruebe nuevas revisiones de Issabel Call Center antes de cambiar `CC_CALLCENTER_GIT_REF`.
+## 19. Recomendaciones de producción
+
+- haga snapshot/backup antes de instalar o actualizar;
+- use HTTPS cuando el panel se exponga fuera de una red confiable;
+- mantenga AMI limitado a localhost cuando sea posible;
+- no publique `config.php`;
+- no use `chmod 777`;
+- conserve `root:apache` para el código y `apache:apache` solamente en directorios que deban escribirse;
+- confirme que el servidor puede resolver y conectar por HTTPS a `www.cybermatica.com.py`;
+- pruebe Dashboard, licencia, grabaciones y supervisión antes de entregar el sistema al usuario final.
+
+## 20. Guía rápida de uso
+
+Consulte también:
+
+**[GUIA_INSTALACION_Y_USO_v1.0.5.md](GUIA_INSTALACION_Y_USO_v1.0.5.md)**
