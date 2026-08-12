@@ -67,13 +67,15 @@ CC_AUTO_INSTALL_CALLCENTER=0 ./install-latest.sh
 
 ### Paso 6 — Permisos web, Apache y SELinux
 
+El código PHP **no queda escribible por Apache**: el propietario permanece `root` y el grupo es `apache`. Apache puede leer el panel, pero solamente `cache/` queda bajo `apache:apache` para escritura. Este esquema es más seguro que asignar todo el código al usuario web.
+
 El sistema configura automáticamente:
 
-- directorios públicos del panel: `0755`;
-- archivos públicos: `0644`;
-- `.htaccess`: `0644`;
-- `config.php`: `0640`, propietario `root` y grupo web;
-- `cache/`: propietario del servidor web y permisos de escritura;
+- directorios del panel: propietario `root`, grupo `apache`, permisos `0755`;
+- archivos públicos: propietario `root`, grupo `apache`, permisos `0644`;
+- `.htaccess`: `root:apache` y `0644`;
+- `config.php`: `root:apache` y `0640`;
+- `cache/`: `apache:apache` y permisos de escritura (`0770`);
 - contexto SELinux `httpd_sys_content_t` para el panel;
 - contexto SELinux `httpd_sys_rw_content_t` para `cache/`;
 - `/etc/httpd/conf.d/callcenter-panel.conf` con `Require all granted` y `DirectoryIndex index.php`.
@@ -108,10 +110,11 @@ ls -lZ /var/www/html/callcenter-panel/config.php
 Valores esperados de referencia:
 
 ```text
-directorios web   drwxr-xr-x   (755)
-.htaccess          -rw-r--r--   (644)
-index.php          -rw-r--r--   (644)
-config.php         -rw-r-----   (640)
+directorios web   root:apache     drwxr-xr-x   (755)
+.htaccess          root:apache     -rw-r--r--   (644)
+index.php          root:apache     -rw-r--r--   (644)
+config.php         root:apache     -rw-r-----   (640)
+cache/             apache:apache   drwxrwx---   (770)
 ```
 
 ### Paso 9 — Acceder al panel
@@ -148,7 +151,7 @@ chmod +x REPARAR_403.sh
 ./REPARAR_403.sh /var/www/html/callcenter-panel
 ```
 
-El reparador corrige permisos Unix, directorios padre, configuración Apache, SELinux, cache y comprueba que el usuario `apache` pueda leer realmente `index.php`, `.htaccess` y `config.php`.
+El reparador corrige permisos Unix, propietario/grupo, directorios padre, configuración Apache, SELinux, cache y comprueba que el usuario `apache` pueda leer realmente `index.php`, `.htaccess` y `config.php`.
 
 Si todavía aparece 403, recopile:
 
@@ -190,6 +193,7 @@ La política inicial es **80 % dentro de 20 segundos (80/20)** y puede modificar
 - AMI usa un usuario separado restringido a `127.0.0.1` cuando panel y Asterisk están en el mismo servidor.
 - Las contraseñas de usuarios se almacenan mediante `password_hash()`.
 - `config.php` permanece fuera del acceso HTTP directo y con permisos restringidos.
+- El código PHP queda `root:apache`; Apache puede leerlo, pero no modificarlo.
 - No use `chmod 777` sobre el panel.
 - Realice un snapshot/backup antes de actualizar una central en producción.
 
