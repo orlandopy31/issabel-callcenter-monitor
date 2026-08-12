@@ -1,28 +1,24 @@
 # Cybermatica Issabel Call Center Monitor
 
-Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, productividad, SLA, grabaciones, licenciamiento y reportería operativa.
+Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, productividad, SLA, grabaciones y reportería operativa.
 
-## Versión principal recomendada
+## Versión principal
 
-**Versión estable principal: v1.0.5**
+**Versión estable principal: v1.0.6**
 
-Esta es la versión recomendada para nuevas instalaciones y actualizaciones.
-
-**Descarga directa:**
-
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.5/issabel-callcenter-monitor-v1.0.5.zip
-
-**Release:**
-
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/tag/v1.0.5
-
-SHA-256 oficial:
+Paquete recomendado:
 
 ```text
-a4af7feb966f7f8c8e9dbc1385a346972c1f632880dc4e4b8caf56f85bdc1395
+issabel-callcenter-monitor-v1.0.6.zip
 ```
 
-## Instalación paso a paso de v1.0.5
+SHA-256 del paquete preparado:
+
+```text
+6754f47a476da7fdba5e53c8d2ea2b192048952dfca771f6ecf48da6928435df
+```
+
+## Instalación paso a paso
 
 ### 1. Ingresar como root
 
@@ -35,37 +31,39 @@ sudo -i
 En Issabel 5 / Rocky Linux 8:
 
 ```bash
-dnf -y install curl wget unzip
+dnf -y install curl wget unzip cronie
 ```
 
-### 3. Descargar el paquete oficial
+### 3. Descargar v1.0.6
+
+Una vez publicada la Release `v1.0.6`:
 
 ```bash
 cd /root
-wget -O issabel-callcenter-monitor-v1.0.5.zip \
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.5/issabel-callcenter-monitor-v1.0.5.zip
+wget -O issabel-callcenter-monitor-v1.0.6.zip \
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.6/issabel-callcenter-monitor-v1.0.6.zip
 ```
 
 ### 4. Verificar integridad
 
 ```bash
 cd /root
-sha256sum issabel-callcenter-monitor-v1.0.5.zip
+sha256sum issabel-callcenter-monitor-v1.0.6.zip
 ```
 
 Debe devolver:
 
 ```text
-a4af7feb966f7f8c8e9dbc1385a346972c1f632880dc4e4b8caf56f85bdc1395  issabel-callcenter-monitor-v1.0.5.zip
+6754f47a476da7fdba5e53c8d2ea2b192048952dfca771f6ecf48da6928435df  issabel-callcenter-monitor-v1.0.6.zip
 ```
 
 ### 5. Descomprimir
 
 ```bash
 cd /root
-rm -rf issabel-callcenter-monitor-v1.0.5
-unzip issabel-callcenter-monitor-v1.0.5.zip
-cd issabel-callcenter-monitor-v1.0.5
+rm -rf issabel-callcenter-monitor-v1.0.6
+unzip issabel-callcenter-monitor-v1.0.6.zip
+cd issabel-callcenter-monitor-v1.0.6
 ```
 
 ### 6. Ejecutar el instalador
@@ -75,10 +73,11 @@ chmod +x install.sh
 ./install.sh
 ```
 
-El instalador solicitará normalmente:
+Durante la instalación se solicitarán:
 
-- directorio del panel: `/var/www/html/callcenter-panel`;
+- directorio web;
 - nombre de empresa/call center;
+- nombre de contacto responsable;
 - zona horaria;
 - usuario administrador de MariaDB/MySQL;
 - contraseña administrativa de MariaDB/MySQL;
@@ -86,11 +85,17 @@ El instalador solicitará normalmente:
 - nombre del administrador;
 - contraseña inicial del panel.
 
+Directorio recomendado:
+
+```text
+/var/www/html/callcenter-panel
+```
+
 ## Issabel Call Center
 
-Antes de instalar el monitor, v1.0.5 verifica Issabel, Asterisk, MariaDB/MySQL, `asteriskcdrdb`, `asterisk`, la base `call_center`, las tablas operativas, `agent_console` e `issabeldialer`.
+El instalador verifica Issabel, Asterisk, MariaDB/MySQL, las bases de Asterisk, la base `call_center`, las tablas operativas, `agent_console` e `issabeldialer`.
 
-Si **Issabel Call Center no está instalado o está incompleto**, el instalador puede instalarlo/repararlo automáticamente en **Issabel 5 sobre Rocky Linux 8** y vuelve a validar sus componentes antes de continuar.
+Si Issabel Call Center está ausente o incompleto en **Issabel 5 sobre Rocky Linux 8**, el instalador puede instalarlo o repararlo automáticamente y vuelve a validar sus componentes antes de continuar.
 
 Log de esa operación:
 
@@ -98,111 +103,35 @@ Log de esa operación:
 /var/log/callcenter-panel-callcenter-install.log
 ```
 
-## Licencia v1.0.5
+## Permisos globales del panel
 
-Cada instalación v1.0.5 registra una instalación única contra el servidor de licencias de Cybermatica y obtiene una **Licence Key**.
-
-Servidor de licencias:
-
-```text
-https://www.cybermatica.com.py/licence
-```
-
-La licencia se crea **ACTIVA**. La suspensión o reactivación se realiza **exclusivamente de forma manual** desde el administrador de licencias de Cybermatica.
-
-El licenciamiento no detiene Asterisk ni Issabel; en caso de una suspensión manual se bloquea únicamente el acceso a Cybermatica Issabel Call Center Monitor.
-
-Para comprobar el timer de licencia:
+v1.0.6 aplica al finalizar un modo global de compatibilidad:
 
 ```bash
-systemctl status cybermatica-license-check.timer --no-pager
-systemctl list-timers cybermatica-license-check.timer
+chmod -R 0777 /var/www/html/callcenter-panel
 ```
 
-Para forzar una validación:
-
-```bash
-php /var/www/html/callcenter-panel/bin/license_check.php
-```
-
-## PASO OBLIGATORIO: aplicar permisos después de instalar
-
-Después de ejecutar `install.sh`, el usuario debe **aplicar y verificar los permisos del panel** antes de abrirlo en el navegador.
-
-Ejecute exactamente:
+Para reaplicar manualmente:
 
 ```bash
 sudo -i
-
-TARGET="/var/www/html/callcenter-panel"
-
-# Permitir que Apache atraviese la ruta web
-chown root:root /var/www /var/www/html
-chmod 755 /var/www /var/www/html
-
-# Código de la aplicación
-chown -R root:apache "$TARGET"
-find "$TARGET" -type d -exec chmod 755 {} \;
-find "$TARGET" -type f -exec chmod 644 {} \;
-
-# Archivos principales
-chown root:apache "$TARGET/index.php" "$TARGET/.htaccess" "$TARGET/config.php"
-chmod 644 "$TARGET/index.php"
-chmod 644 "$TARGET/.htaccess"
-chmod 640 "$TARGET/config.php"
-
-# Directorio escribible
-chown -R apache:apache "$TARGET/cache"
-find "$TARGET/cache" -type d -exec chmod 770 {} \;
-find "$TARGET/cache" -type f -exec chmod 660 {} \;
+chmod -R 0777 /var/www/html/callcenter-panel
 ```
 
-El resultado esperado es:
+> Se utiliza `0777` y no `7777`. `7777` activa además bits especiales `setuid`, `setgid` y `sticky` sobre archivos y directorios.
 
-```text
-/var/www/html/callcenter-panel   root:apache     755
-index.php                         root:apache     644
-.htaccess                         root:apache     644
-config.php                        root:apache     640
-cache/                            apache:apache   770
-```
-
-> Que los archivos PHP tengan propietario `root` es correcto. El grupo debe ser `apache`. Solamente `cache/` debe quedar escribible por Apache.
-
-### Verificar lectura real como Apache
-
-```bash
-runuser -u apache -- test -x /var/www/html/callcenter-panel && echo "OK directorio"
-runuser -u apache -- test -r /var/www/html/callcenter-panel/index.php && echo "OK index.php"
-runuser -u apache -- test -r /var/www/html/callcenter-panel/.htaccess && echo "OK .htaccess"
-runuser -u apache -- test -r /var/www/html/callcenter-panel/config.php && echo "OK config.php"
-```
-
-Deben aparecer los cuatro mensajes `OK`.
-
-## Apache y SELinux
-
-Compruebe:
+## Comprobar servicios
 
 ```bash
 apachectl -t
-getenforce
-ls -ldZ /var/www/html/callcenter-panel
-ls -ldZ /var/www/html/callcenter-panel/cache
+systemctl status httpd --no-pager
+systemctl status php-fpm --no-pager
+systemctl status issabeldialer --no-pager
+systemctl status crond --no-pager
+asterisk -rx "core show version"
 ```
 
-Si aparece un 403 Forbidden puede ejecutar:
-
-```bash
-cd /root
-curl -fsSL \
-https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
--o REPARAR_403.sh
-chmod +x REPARAR_403.sh
-./REPARAR_403.sh /var/www/html/callcenter-panel
-```
-
-## Primer acceso y uso
+## Primer acceso
 
 Panel:
 
@@ -216,18 +145,20 @@ Wallboard:
 http://IP_DEL_ISSABEL/callcenter-panel/live.php?tv=1
 ```
 
+## Uso inicial recomendado
+
 Después del primer ingreso:
 
-1. compruebe que la licencia aparezca como **ACTIVE**;
-2. cambie o confirme la contraseña administrativa;
-3. cree los usuarios del sistema y asigne permisos;
-4. revise **Administración → Configuración SLA**;
-5. pruebe el Dashboard y Productividad;
-6. compruebe agentes y pausas;
-7. valide abandonadas y devoluciones;
+1. revise el Dashboard;
+2. compruebe los agentes conectados;
+3. revise Productividad;
+4. valide llamadas recibidas y realizadas;
+5. controle llamadas abandonadas y devueltas;
+6. configure **Administración → Configuración SLA**;
+7. revise pausas y sesiones;
 8. pruebe grabaciones;
-9. configure el usuario de Wallboard si utilizará una TV;
-10. pruebe supervisión AMI/ChanSpy solamente con usuarios autorizados.
+9. cree usuarios y asigne permisos;
+10. configure el Wallboard si utilizará una TV.
 
 ## Funciones principales
 
@@ -239,53 +170,64 @@ Después del primer ingreso:
 - Llamadas abandonadas y devueltas.
 - Campañas salientes.
 - Pausas y sesiones.
-- Nivel de servicio / SLA configurable.
+- SLA configurable.
 - Grabaciones.
 - Escucha, susurro y conferencia mediante AMI + ChanSpy.
 - Exportaciones CSV/PDF.
-- Usuarios y permisos granulares.
-- Auditoría.
-- Licence Key por instalación con suspensión/reactivación manual centralizada.
+- Usuarios, permisos y auditoría.
+
+## Reparar 403 Forbidden
+
+```bash
+sudo -i
+cd /root
+curl -fsSL \
+https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
+-o REPARAR_403.sh
+chmod +x REPARAR_403.sh
+./REPARAR_403.sh /var/www/html/callcenter-panel
+```
 
 ## Diagnóstico
 
 ```bash
 cd /var/www/html/callcenter-panel
-sudo -u apache php bin/diagnostico.php
+php bin/diagnostico.php
 ```
 
-También revise:
+Validar sintaxis PHP:
 
 ```bash
-systemctl status httpd --no-pager
-systemctl status php-fpm --no-pager
-systemctl status issabeldialer --no-pager
-systemctl status cybermatica-license-check.timer --no-pager
-asterisk -rx "core show version"
+find /var/www/html/callcenter-panel -name '*.php' -print0 \
+  | xargs -0 -n1 php -l
 ```
 
 ## Documentación
 
 - [Guía de instalación desde cero](GUIA_INSTALACION_DESDE_CERO.md)
-- [Guía de instalación y uso v1.0.5](GUIA_INSTALACION_Y_USO_v1.0.5.md)
+- [Guía de instalación y uso v1.0.6](GUIA_INSTALACION_Y_USO_v1.0.6.md)
 - [Dependencia Issabel Call Center](DEPENDENCIA_ISSABEL_CALLCENTER.md)
 - [Seguridad](SECURITY.md)
 
-## Seguridad
+## Contacto
 
-- no use `chmod 777` sobre el panel;
-- el código PHP debe quedar `root:apache`;
-- solamente `cache/` debe ser escribible por Apache;
-- PHP no utiliza MySQL `root` durante el funcionamiento normal;
-- AMI debe mantenerse restringido a localhost cuando panel y Asterisk están en el mismo servidor;
-- realice backup o snapshot antes de instalar o actualizar una central en producción.
+```text
+Cybermatica
+Email:    info@cybermatica.com.py
+Teléfono: 021 728 9200
+Web:      www.cybermatica.com.py
+```
 
 ## Versión
 
 ```text
-1.0.5
+1.0.6
 ```
 
 ## Proyecto
 
-Repositorio: `orlandopy31/issabel-callcenter-monitor`
+Repositorio:
+
+```text
+orlandopy31/issabel-callcenter-monitor
+```
