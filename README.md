@@ -4,18 +4,18 @@ Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, pro
 
 ## Versión principal
 
-**Versión estable principal: v1.0.7**
+**Versión estable principal: v1.0.8**
 
 Paquete recomendado:
 
 ```text
-issabel-callcenter-monitor-v1.0.7.zip
+issabel-callcenter-monitor-v1.0.8.zip
 ```
 
 SHA-256 del paquete preparado:
 
 ```text
-6754f47a476da7fdba5e53c8d2ea2b192048952dfca771f6ecf48da6928435df
+b0ffff3c2299551401bdfcf35ea9be8283c0aab612cc0241c5d813e4f0f2a393
 ```
 
 ## Instalación paso a paso
@@ -34,23 +34,23 @@ En Issabel 5 / Rocky Linux 8:
 dnf -y install curl wget unzip cronie
 ```
 
-### 3. Descargar v1.0.7
+### 3. Descargar v1.0.8
 
-Una vez publicada la Release `v1.0.7`:
+Una vez publicada la Release `v1.0.8`:
 
 ```bash
 cd /root
-wget -O issabel-callcenter-monitor-v1.0.7.zip \
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.7/issabel-callcenter-monitor-v1.0.7.zip
+wget -O issabel-callcenter-monitor-v1.0.8.zip \
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.7/issabel-callcenter-monitor-v1.0.8.zip
 ```
 
 ### 4. Descomprimir
 
 ```bash
 cd /root
-rm -rf issabel-callcenter-monitor-v1.0.7
-unzip issabel-callcenter-monitor-v1.0.7.zip
-cd issabel-callcenter-monitor-v1.0.7
+rm -rf issabel-callcenter-monitor-v1.0.8
+unzip issabel-callcenter-monitor-v1.0.8.zip
+cd issabel-callcenter-monitor-v1.0.8
 ```
 
 ### 5. Ejecutar el instalador
@@ -208,7 +208,7 @@ Web:      www.cybermatica.com.py
 ## Versión
 
 ```text
-1.0.7
+v1.0.8
 ```
 
 ## Proyecto
