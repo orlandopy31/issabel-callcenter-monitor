@@ -1,4 +1,4 @@
-# Guía de instalación y uso — v1.0.6
+# Guía de instalación y uso — v1.0.8
 
 ## 1. Requisitos
 
@@ -19,12 +19,12 @@ dnf -y install curl wget unzip cronie
 
 ## 2. Descargar
 
-Una vez publicada la Release `v1.0.6`:
+Una vez publicada la Release `v1.0.8`:
 
 ```bash
 cd /root
-wget -O issabel-callcenter-monitor-v1.0.6.zip \
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.6/issabel-callcenter-monitor-v1.0.6.zip
+wget -O issabel-callcenter-monitor-v1.0.8.zip \
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.8/issabel-callcenter-monitor-v1.0.8.zip
 ```
 
 SHA-256:
@@ -37,9 +37,9 @@ SHA-256:
 
 ```bash
 cd /root
-rm -rf issabel-callcenter-monitor-v1.0.6
-unzip issabel-callcenter-monitor-v1.0.6.zip
-cd issabel-callcenter-monitor-v1.0.6
+rm -rf issabel-callcenter-monitor-v1.0.8
+unzip issabel-callcenter-monitor-v1.0.8.zip
+cd issabel-callcenter-monitor-v1.0.8
 chmod +x install.sh
 ./install.sh
 ```
