@@ -202,3 +202,8 @@ Repositorio:
 ```text
 orlandopy31/issabel-callcenter-monitor
 ```
+<img width="1922" height="959" alt="Captura de pantalla 2026-08-10 133551" src="https://github.com/user-attachments/assets/a9ca6adf-8fa4-46c8-bbc4-4bd57dfb8e5f" />
+<img width="1877" height="946" alt="Captura de pantalla 2026-08-14 103527" src="https://github.com/user-attachments/assets/70a96db7-e848-41bb-8c3d-c59c7bade651" />
+<img width="1857" height="949" alt="Captura de pantalla 2026-08-14 103550" src="https://github.com/user-attachments/assets/722e5a59-adb3-4f3d-8bab-fe13e20935cd" />
+<img width="1869" height="982" alt="Captura de pantalla 2026-08-14 103416" src="https://github.com/user-attachments/assets/ee23e199-b86a-46af-9b5b-def972d7578f" />
+<img width="1893" height="947" alt="Captura de pantalla 2026-08-14 103453" src="https://github.com/user-attachments/assets/f1f6cb84-a61c-48d4-bd7f-61c31c2cce4d" />
