@@ -40,7 +40,7 @@ Una vez publicada la Release `v1.0.9`:
 
 ```bash
 cd /root
-wget -O issabel-callcenter-monitor-v1.0.8.zip \
+wget -O issabel-callcenter-monitor-v1.0.9.zip \
 https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.9/issabel-callcenter-monitor-v1.0.9.zip
 ```
 
