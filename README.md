@@ -41,7 +41,7 @@ Una vez publicada la Release `v1.0.8`:
 ```bash
 cd /root
 wget -O issabel-callcenter-monitor-v1.0.8.zip \
-https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.7/issabel-callcenter-monitor-v1.0.8.zip
+https://github.com/orlandopy31/issabel-callcenter-monitor/releases/download/v1.0.8/issabel-callcenter-monitor-v1.0.8.zip
 ```
 
 ### 4. Descomprimir
