@@ -1,6 +1,8 @@
 # Cybermatica Issabel Call Center Monitor
 
 Panel web para **Issabel 5 / Asterisk** orientado a monitoreo, supervisión, productividad, SLA, grabaciones y reportería operativa.
+## OBSERVACION IMPORTANTE:
+Este sistema esta en modo beta, las licencias aplicadas a este modulo estan liberados, el sistema puede tener errores, seguimos trabajando y mejorando el sistema para tenerlo listo pronto
 
 ## Versión principal
 
@@ -163,18 +165,6 @@ Después del primer ingreso:
 - Exportaciones CSV/PDF.
 - Usuarios, permisos y auditoría.
 
-## Reparar 403 Forbidden
-
-```bash
-sudo -i
-cd /root
-curl -fsSL \
-https://raw.githubusercontent.com/orlandopy31/issabel-callcenter-monitor/main/REPARAR_403.sh \
--o REPARAR_403.sh
-chmod +x REPARAR_403.sh
-./REPARAR_403.sh /var/www/html/callcenter-panel
-```
-
 ## Diagnóstico
 
 ```bash
@@ -189,13 +179,6 @@ find /var/www/html/callcenter-panel -name '*.php' -print0 \
   | xargs -0 -n1 php -l
 ```
 
-## Documentación
-
-- [Guía de instalación desde cero](GUIA_INSTALACION_DESDE_CERO.md)
-- [Guía de instalación y uso v1.0.6](GUIA_INSTALACION_Y_USO_v1.0.6.md)
-- [Dependencia Issabel Call Center](DEPENDENCIA_ISSABEL_CALLCENTER.md)
-- [Seguridad](SECURITY.md)
-
 ## Contacto
 
 ```text
@@ -203,6 +186,7 @@ Cybermatica
 Email:    info@cybermatica.com.py
 Teléfono: 021 728 9200
 Web:      www.cybermatica.com.py
+Whatsapp: +595984346094
 ```
 
 ## Versión
